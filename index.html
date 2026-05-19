@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gastos.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f4f1;--s1:#ffffff;--s2:#fafaf7;--s3:#efefec;--s4:#e6e6e2;
+  --b1:#e2e2de;--b2:#cececa;
+  --t1:#1c1c1a;--t2:#58585a;--t3:#9a9a95;
+  --acc:#2563eb;--acc2:#1d4ed8;
+  --red:#dc2626;--blue:#2563eb;--amber:#d97706;--green:#16a34a;--purple:#7c3aed;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --r:14px;--r2:8px;--r3:5px;
+  --shadow:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+}
+
+body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;gap:0;padding:0 24px;height:54px;border-bottom:1px solid var(--b1);background:var(--s1);position:sticky;top:0;z-index:50;box-shadow:0 1px 0 var(--b1)}
+.logo{font-size:18px;font-weight:700;letter-spacing:-1px;margin-right:20px;color:var(--t1)}
+.logo em{color:var(--acc);font-style:normal}
+.nav{display:flex;flex:1;gap:2px}
+.nav-btn{padding:7px 13px;border-radius:var(--r3);border:none;background:transparent;color:var(--t3);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:.15s;white-space:nowrap}
+.nav-btn:hover{color:var(--t1);background:var(--s3)}
+.nav-btn.on{color:var(--acc);background:rgba(37,99,235,.08);font-weight:600}
+.sync-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r2);border:1px solid var(--b2);background:transparent;color:var(--t3);font-size:12px;font-family:var(--font);cursor:pointer;transition:.15s;margin-left:auto}
+.sync-btn:hover{color:var(--acc);border-color:var(--acc)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.off{background:var(--t3)}
+.sync-dot.loading{background:var(--amber);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.add-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r2);border:none;background:var(--acc);color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;margin-left:8px;transition:.15s;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.add-btn:hover{background:var(--acc2)}
+
+/* MAIN */
+.main{padding:24px;max-width:1100px;margin:0 auto}
+
+/* MES NAV */
+.mes-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.mes-arr{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r3);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3);font-size:18px;transition:.15s;flex-shrink:0;box-shadow:var(--shadow)}
+.mes-arr:hover{color:var(--t1);border-color:var(--b2)}
+.mes-title{font-size:22px;font-weight:700;letter-spacing:-.5px}
+.mes-code{font-family:var(--mono);font-size:11px;color:var(--t3);background:var(--s3);border-radius:var(--r3);padding:3px 8px;margin-left:8px}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.metric{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px 18px;transition:.2s;box-shadow:var(--shadow)}
+.metric:hover{border-color:var(--b2);transform:translateY(-1px)}
+.metric-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:7px;font-weight:600}
+.metric-val{font-size:22px;font-weight:700;font-family:var(--mono);letter-spacing:-1px;line-height:1}
+.metric-sub{font-size:11px;color:var(--t3);margin-top:5px}
+.c-ing{color:var(--green)}
+.c-egr{color:var(--red)}
+.c-bal-pos{color:var(--green)}
+.c-bal-neg{color:var(--red)}
+.c-fijo{color:var(--blue)}
+
+/* GRID */
+.dash-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.card-ttl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);font-weight:600;margin-bottom:16px}
+
+/* FIJO/VARIABLE DONUT */
+.donut-wrap{display:flex;align-items:center;gap:24px}
+.donut-svg{flex-shrink:0}
+.donut-legend{flex:1}
+.legend-row{margin-bottom:12px}
+.legend-row:last-child{margin-bottom:0;padding-top:10px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center}
+.legend-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.legend-label{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:6px}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.legend-val{font-family:var(--mono);font-size:13px;font-weight:700}
+.legend-bar{height:5px;background:var(--s3);border-radius:3px;overflow:hidden}
+.legend-bar-fill{height:100%;border-radius:3px;transition:.5s}
+
+/* BAR CHART */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.bar-lbl{font-size:12px;color:var(--t2);width:110px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:7px;background:var(--s3);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:.5s}
+.bar-val{font-family:var(--mono);font-size:11px;color:var(--t2);width:85px;text-align:right;flex-shrink:0}
+
+/* SPARKLINE */
+.spark-wrap{display:flex;flex-direction:column;height:100%}
+.spark-months{display:flex;gap:5px;align-items:flex-end;height:80px;margin:8px 0 4px}
+.spark-bar{flex:1;border-radius:3px 3px 0 0;min-height:3px;transition:.4s;position:relative;cursor:default}
+.spark-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--t1);color:#fff;font-size:11px;padding:4px 8px;border-radius:var(--r3);white-space:nowrap;font-family:var(--mono);pointer-events:none;z-index:10}
+.spark-lbls{display:flex;gap:5px}
+.spark-lbl{flex:1;text-align:center;font-size:9px;color:var(--t3);font-family:var(--mono)}
+
+/* TABLE */
+.txn-tbl{width:100%;border-collapse:collapse}
+.txn-tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);padding:8px 10px;text-align:left;border-bottom:1px solid var(--b1);font-weight:600;white-space:nowrap}
+.txn-tbl td{padding:9px 10px;border-bottom:1px solid var(--b1);font-size:12px;vertical-align:middle}
+.txn-tbl tr:hover td{background:var(--s2)}
+.txn-tbl tr:last-child td{border-bottom:none}
+.cat-pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:var(--mono)}
+.p-Fijo{background:#dbeafe;color:#1d4ed8}
+.p-Casa{background:#ede9fe;color:#5b21b6}
+.p-Salidas{background:#fef3c7;color:#92400e}
+.p-Almuerzo{background:#ffedd5;color:#9a3412}
+.p-Entretenimiento{background:#dcfce7;color:#15803d}
+.p-Ropa{background:#fce7f3;color:#9d174d}
+.p-Nafta{background:#e0f2fe;color:#0369a1}
+.p-Deuda{background:#fee2e2;color:#991b1b}
+.p-Otros{background:#f3f4f6;color:#374151}
+.p-Sueldo{background:#d1fae5;color:#065f46}
+.p-Caja{background:#d1fae5;color:#065f46}
+.p-Extra{background:#d1fae5;color:#065f46}
+.tipo-ing{color:var(--green);font-weight:700;font-size:11px}
+.tipo-egr{color:var(--red);font-weight:700;font-size:11px}
+.monto-ing{color:var(--green);font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
+.monto-egr{color:var(--red);font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
+.pago-txt{font-size:11px;color:var(--t3);font-family:var(--mono)}
+.yo-no{color:var(--amber);font-size:11px;font-weight:600}
+
+/* FILTERS */
+.filter-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.flt{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:7px 11px;color:var(--t2);font-family:var(--font);font-size:12px;outline:none;cursor:pointer;transition:.15s}
+.flt:focus,.flt:hover{border-color:var(--acc);color:var(--t1)}
+.search-inp{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);padding:7px 11px;color:var(--t1);font-family:var(--font);font-size:12px;outline:none;flex:1;min-width:140px;transition:.15s}
+.search-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.count-badge{font-size:11px;color:var(--t3);margin-left:auto;font-family:var(--mono)}
+
+/* FORM */
+.form-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.2s;backdrop-filter:blur(3px)}
+.form-overlay.open{opacity:1;pointer-events:all}
+.form-box{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.form-ttl{font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;color:var(--t1)}
+.form-close{background:none;border:none;color:var(--t3);font-size:22px;cursor:pointer;line-height:1;transition:.15s}
+.form-close:hover{color:var(--t1)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.flbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);font-weight:600}
+.finp{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r3);padding:10px 12px;color:var(--t1);font-family:var(--font);font-size:13px;outline:none;transition:.15s;width:100%}
+.finp:focus{border-color:var(--acc);background:var(--s1);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.ftoggle-row{display:flex;align-items:center;gap:9px;padding:4px 0}
+.ftoggle{width:36px;height:20px;background:var(--s3);border:1.5px solid var(--b2);border-radius:10px;position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+.ftoggle.on{background:var(--acc);border-color:var(--acc)}
+.ftoggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.ftoggle.on::after{left:18px}
+.form-actions{display:flex;gap:8px;margin-top:20px}
+.btn-save{flex:1;padding:11px;background:var(--acc);border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:.15s;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.btn-save:hover{background:var(--acc2)}
+.btn-save:disabled{opacity:.6;cursor:not-allowed}
+.btn-cancel{padding:11px 18px;background:transparent;border:1px solid var(--b2);border-radius:var(--r2);color:var(--t2);font-family:var(--font);font-size:14px;cursor:pointer;transition:.15s}
+.btn-cancel:hover{color:var(--t1);border-color:var(--b2)}
+
+/* CUOTAS INFO */
+.cuota-info{font-size:11px;color:var(--t3);margin-top:4px}
+
+/* CATEGORIES table */
+.cat-table{width:100%;border-collapse:collapse}
+.cat-table th{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);padding:8px;text-align:right;border-bottom:1px solid var(--b1);font-weight:600}
+.cat-table th:first-child{text-align:left}
+.cat-table td{padding:7px 8px;border-bottom:1px solid var(--b1);font-size:12px;font-family:var(--mono);text-align:right;color:var(--t2)}
+.cat-table td:first-child{text-align:left;font-family:var(--font);font-size:12px;color:var(--t1)}
+.cat-table tr:hover td{background:var(--s2)}
+.cat-total{font-weight:700;color:var(--t1) !important;border-top:2px solid var(--b1) !important;border-bottom:none !important}
+
+/* NOTIFY */
+.notify{position:fixed;bottom:24px;right:24px;background:var(--t1);color:#fff;padding:12px 20px;border-radius:var(--r);font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;z-index:999;font-family:var(--font);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.notify.show{opacity:1;transform:translateY(0)}
+.notify.err{background:var(--red)}
+.notify.warn{background:var(--amber)}
+.notify.ok{background:var(--green)}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px;color:var(--t3);font-size:13px}
+
+/* RESUMEN TABLE */
+.res-table{width:100%;border-collapse:collapse}
+.res-table th{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);padding:8px 10px;text-align:right;border-bottom:1px solid var(--b1);font-weight:600}
+.res-table th:first-child{text-align:left}
+.res-table td{padding:10px 10px;border-bottom:1px solid var(--b1);font-size:12px;font-family:var(--mono);text-align:right;color:var(--t2)}
+.res-table td:first-child{text-align:left;font-family:var(--font);font-weight:600;color:var(--t1)}
+.res-table tr:last-child td{border-bottom:none;font-weight:700;color:var(--t1);border-top:2px solid var(--b1)}
+.r-pos{color:var(--green) !important}
+.r-neg{color:var(--red) !important}
+
+/* FIJOS */
+.fijo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fijo-item{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.fijo-name{font-size:13px;font-weight:600;color:var(--t1)}
+.fijo-meta{font-size:11px;color:var(--t3);margin-top:2px}
+.fijo-monto{font-family:var(--mono);font-size:15px;color:var(--blue);font-weight:700}
+
+/* TABS CONTENT */
+.tab-pane{display:none}
+.tab-pane.on{display:block}
+
+/* Segmented tipo */
+.seg{display:flex;background:var(--s3);border-radius:var(--r2);padding:3px;gap:3px;margin-bottom:14px;width:fit-content}
+.seg-btn{padding:6px 16px;border-radius:6px;border:none;background:transparent;color:var(--t3);font-family:var(--font);font-size:13px;cursor:pointer;transition:.15s;font-weight:500}
+.seg-btn.on{background:var(--s1);color:var(--acc);box-shadow:0 1px 4px rgba(0,0,0,.1);font-weight:600}
+
+/* SETUP BANNER */
+.setup-banner{background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r2);padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1e40af;display:none}
+.setup-banner a{color:var(--acc);font-weight:600}
+
+/* STATUS BAR */
+.status-row{display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:4px}
+.status-txt{font-size:11px;color:var(--t3);font-family:var(--mono)}
+
+@media(max-width:768px){
+  .metrics{grid-template-columns:1fr 1fr}
+  .dash-row{grid-template-columns:1fr}
+  .fijo-grid{grid-template-columns:1fr}
+  .donut-wrap{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">gastos<em>.</em></div>
+  <div class="nav">
+    <button class="nav-btn on" onclick="goTab('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="goTab('historial')">Historial</button>
+    <button class="nav-btn" onclick="goTab('resumen')">Resumen</button>
+    <button class="nav-btn" onclick="goTab('categorias')">Categorías</button>
+    <button class="nav-btn" onclick="goTab('fijos')">Fijos</button>
+  </div>
+  <button class="sync-btn" id="sync-btn" onclick="loadData()">
+    <span class="sync-dot off" id="sdot"></span>
+    <span id="sync-txt">Sincronizar</span>
+  </button>
+  <button class="add-btn" onclick="abrirForm('egreso')">+ Gasto</button>
+</div>
+
+<div class="main">
+
+  <div class="setup-banner" id="setup-banner">
+    ⚡ Para sincronizar con Google Sheets, configurá el Apps Script y pegá la URL en <code>SCRIPT_URL</code> del código.
+    <a href="https://script.google.com" target="_blank">Abrir Apps Script ↗</a>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="tab-pane on" id="tab-dashboard">
+    <div class="mes-bar">
+      <div class="mes-arr" onclick="chgMes(-1)">‹</div>
+      <div>
+        <span class="mes-title" id="mes-title">Mayo 2026</span>
+        <span class="mes-code" id="mes-code">MAY 26</span>
+      </div>
+      <div class="mes-arr" onclick="chgMes(1)">›</div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-lbl">Ingresos</div><div class="metric-val c-ing" id="m-ing">$0</div><div class="metric-sub" id="m-ing-n">0 movimientos</div></div>
+      <div class="metric"><div class="metric-lbl">Egresos</div><div class="metric-val c-egr" id="m-egr">$0</div><div class="metric-sub" id="m-egr-n">0 movimientos</div></div>
+      <div class="metric"><div class="metric-lbl">Balance</div><div class="metric-val" id="m-bal">$0</div><div class="metric-sub">ingresos − egresos</div></div>
+      <div class="metric"><div class="metric-lbl">Gastos fijos</div><div class="metric-val c-fijo" id="m-fijo">$0</div><div class="metric-sub" id="m-fijo-pct">0% del egreso</div></div>
+    </div>
+    <div class="dash-row">
+      <div class="card">
+        <div class="card-ttl">Fijos vs Variables</div>
+        <div id="chart-fijo-var"><div class="empty">Sin datos</div></div>
+      </div>
+      <div class="card">
+        <div class="card-ttl">Evolución de egresos — 8 meses</div>
+        <div class="spark-wrap">
+          <div class="spark-months" id="spark-bars"></div>
+          <div class="spark-lbls" id="spark-lbls"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-ttl">Por categoría — este mes</div>
+      <div id="chart-cats"><div class="empty">Sin datos</div></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Últimas transacciones</div>
+      <div id="recent-txns"></div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="tab-pane" id="tab-historial">
+    <div class="mes-bar">
+      <div class="mes-arr" onclick="chgMes(-1)">‹</div>
+      <div>
+        <span class="mes-title" id="mes-title2">Mayo 2026</span>
+        <span class="mes-code" id="mes-code2">MAY 26</span>
+      </div>
+      <div class="mes-arr" onclick="chgMes(1)">›</div>
+    </div>
+    <div class="card">
+      <div class="filter-row">
+        <input class="search-inp" id="search" placeholder="Buscar motivo..." oninput="renderHistorial()">
+        <select class="flt" id="flt-tipo" onchange="renderHistorial()">
+          <option value="">Todos</option><option>Egreso</option><option>Ingreso</option>
+        </select>
+        <select class="flt" id="flt-cat" onchange="renderHistorial()">
+          <option value="">Categoría</option>
+          <option>Fijo</option><option>Casa</option><option>Salidas</option>
+          <option>Almuerzo</option><option>Entretenimiento</option><option>Ropa</option>
+          <option>Nafta</option><option>Deuda</option><option>Otros</option>
+          <option>Sueldo</option><option>Caja</option>
+        </select>
+        <select class="flt" id="flt-pago" onchange="renderHistorial()">
+          <option value="">Pago</option><option>Tarjeta</option><option>Efectivo</option>
+        </select>
+        <select class="flt" id="flt-yo" onchange="renderHistorial()">
+          <option value="">Todos</option><option value="Si">Solo míos</option><option value="No">Compartidos</option>
+        </select>
+        <span class="count-badge" id="hist-count">0 filas</span>
+        <button class="sync-btn" onclick="exportCSV()">↓ CSV</button>
+      </div>
+      <div id="hist-body"></div>
+    </div>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="tab-pane" id="tab-resumen">
+    <div class="card">
+      <div class="card-ttl">Resumen mensual — todos los períodos</div>
+      <div id="res-body"></div>
+    </div>
+  </div>
+
+  <!-- CATEGORÍAS -->
+  <div class="tab-pane" id="tab-categorias">
+    <div class="card">
+      <div class="card-ttl">Gasto por categoría × mes</div>
+      <div style="overflow-x:auto" id="cat-body"></div>
+    </div>
+  </div>
+
+  <!-- FIJOS -->
+  <div class="tab-pane" id="tab-fijos">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-ttl">Gastos fijos mensuales</div>
+      <div class="fijo-grid" id="fijos-body"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--t3);font-weight:500">Total mensual fijos</span>
+        <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--blue)" id="fijo-total">$0</span>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--t3);line-height:2;padding:0 2px">
+      Para actualizar montos editá directamente el Google Sheet en la hoja <strong style="color:var(--t2)">Fijos</strong>.<br>
+      Al inicio de cada mes agregá los fijos con fecha del 1° del mes.
+    </div>
+  </div>
+
+</div>
+
+<!-- FORM OVERLAY -->
+<div class="form-overlay" id="form-overlay">
+  <div class="form-box">
+    <div class="form-ttl">
+      <span id="form-titulo">Nuevo gasto</span>
+      <button class="form-close" onclick="cerrarForm()">×</button>
+    </div>
+    <div class="seg" id="seg-tipo">
+      <button class="seg-btn on" onclick="setTipo('egreso',this)">Egreso</button>
+      <button class="seg-btn" onclick="setTipo('ingreso',this)">Ingreso</button>
+    </div>
+    <div class="form-grid">
+      <div class="fg">
+        <div class="flbl">Fecha</div>
+        <input class="finp" type="date" id="f-fecha">
+      </div>
+      <div class="fg">
+        <div class="flbl">Monto ($)</div>
+        <input class="finp" type="number" id="f-monto" placeholder="0" min="0">
+      </div>
+      <div class="fg" id="fg-cat">
+        <div class="flbl">Categoría</div>
+        <select class="finp" id="f-cat">
+          <option>Fijo</option><option>Casa</option><option selected>Salidas</option>
+          <option>Almuerzo</option><option>Entretenimiento</option><option>Ropa</option>
+          <option>Nafta</option><option>Deuda</option><option>Otros</option>
+        </select>
+      </div>
+      <div class="fg" id="fg-cat-ing" style="display:none">
+        <div class="flbl">Categoría</div>
+        <select class="finp" id="f-cat-ing">
+          <option>Sueldo</option><option>Caja</option><option>Extra</option><option>Otros</option>
+        </select>
+      </div>
+      <div class="fg" id="fg-pago">
+        <div class="flbl">Forma de pago</div>
+        <select class="finp" id="f-pago">
+          <option>Efectivo</option><option>Tarjeta</option>
+        </select>
+      </div>
+      <div class="fg full">
+        <div class="flbl">Motivo</div>
+        <input class="finp" type="text" id="f-motivo" placeholder="ej: Super, Asado, Uber...">
+      </div>
+      <div class="fg full">
+        <div class="flbl">Observaciones</div>
+        <input class="finp" type="text" id="f-obs" placeholder="opcional">
+      </div>
+      <div class="fg full" id="fg-yo">
+        <div class="ftoggle-row">
+          <div class="ftoggle on" id="tog-yo" onclick="toggleYo()"></div>
+          <span style="font-size:13px;color:var(--t2)">Lo pagás vos</span>
+        </div>
+      </div>
+      <div class="fg full" id="fg-cuotas">
+        <div class="ftoggle-row">
+          <div class="ftoggle" id="tog-cuotas" onclick="toggleCuotas()"></div>
+          <span style="font-size:13px;color:var(--t2)">Pago en cuotas</span>
+        </div>
+        <div id="cuotas-panel" style="display:none;margin-top:8px;align-items:center;gap:8px">
+          <select class="finp" id="f-ncuotas" style="width:140px">
+            <option value="2">2 cuotas</option><option value="3">3 cuotas</option>
+            <option value="6">6 cuotas</option><option value="12">12 cuotas</option>
+          </select>
+          <span class="cuota-info" style="margin-left:8px">El monto se divide automáticamente</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-save" id="btn-guardar" onclick="guardar()">Guardar</button>
+      <button class="btn-cancel" onclick="cerrarForm()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="notify" id="notify"></div>
+
+<script>
+// ── CONFIGURACIÓN ─────────────────────────────────────────────────────────────
+// Pegá aquí la URL de tu Google Apps Script desplegado como Web App
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQy12yBHqZ7SirqU_cBC6MwhSrkVad6MpKXRjQuc1UQQ5Svv2bb-EZ4anj3wZEqr0t/exec';
+
+const SHEET_ID  = '1gVi3VGFD3bMSBE9NwKmDfzNBFpcgVsQEAXWk_fu2kbE';
+const MES_NOM   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MES_COD   = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+
+const CAT_COL = {
+  Fijo:'#2563eb',Casa:'#7c3aed',Salidas:'#d97706',Almuerzo:'#ea580c',
+  Entretenimiento:'#16a34a',Ropa:'#db2777',Nafta:'#0369a1',Deuda:'#dc2626',
+  Otros:'#6b7280',Sueldo:'#059669',Caja:'#059669',Extra:'#059669'
+};
+
+// ── DATA (seed inicial — se reemplaza con datos del Sheet al sincronizar) ──────
+const TXN_SEED = [
+  ['TXN0001','01/11/2025',2025,11,'Egreso','Deuda','',376300,'Efectivo','Si',''],
+  ['TXN0002','01/11/2025',2025,11,'Ingreso','Sueldo','Sueldo',871000,'','Si',''],
+  ['TXN0003','29/10/2025',2025,10,'Egreso','Casa','Farmacia',7700,'Tarjeta','No',''],
+  ['TXN0004','01/11/2025',2025,11,'Ingreso','Caja','Caja',200000,'','Si',''],
+  ['TXN0005','29/10/2025',2025,10,'Egreso','Casa','Carniceria',17693,'Tarjeta','No','Milanesas'],
+  ['TXN0006','01/11/2025',2025,11,'Egreso','Fijo','Socio',36250,'Tarjeta','Si',''],
+  ['TXN0007','01/11/2025',2025,11,'Egreso','Fijo','Tenis',72000,'Tarjeta','Si',''],
+  ['TXN0008','01/11/2025',2025,11,'Egreso','Fijo','Teléfono',13050,'Efectivo','Si',''],
+  ['TXN0009','28/11/2025',2025,11,'Egreso','Entretenimiento','Futbol',7000,'Efectivo','Si',''],
+  ['TXN0010','30/10/2025',2025,10,'Egreso','Otros','Chocolates',7200,'Efectivo','Si',''],
+  ['TXN0011','01/11/2025',2025,11,'Egreso','Otros','Sube',10000,'Efectivo','Si',''],
+  ['TXN0012','01/11/2025',2025,11,'Egreso','Salidas','Juntada',18875,'Tarjeta','Si',''],
+  ['TXN0013','01/11/2025',2025,11,'Egreso','Salidas','Cine',6500,'Tarjeta','Si',''],
+  ['TXN0014','01/11/2025',2025,11,'Egreso','Salidas','Juntada',20000,'Efectivo','Si',''],
+  ['TXN0015','01/11/2025',2025,11,'Egreso','Salidas','Uber',11000,'Efectivo','Si',''],
+  ['TXN0016','02/11/2025',2025,11,'Egreso','Salidas','Juntada',7830,'Tarjeta','Si',''],
+  ['TXN0017','03/11/2025',2025,11,'Egreso','Otros','Gasista',35000,'Efectivo','Si',''],
+  ['TXN0018','03/11/2025',2025,11,'Egreso','Otros','Ferreteria',10000,'Tarjeta','No',''],
+  ['TXN0019','04/11/2025',2025,11,'Egreso','Otros','Farmacia',7200,'Tarjeta','Si',''],
+  ['TXN0020','04/11/2025',2025,11,'Egreso','Casa','Supermercado',14700,'Tarjeta','Si',''],
+  ['TXN0021','07/11/2025',2025,11,'Egreso','Fijo','YouTube',9170,'Efectivo','Si',''],
+  ['TXN0022','07/11/2025',2025,11,'Egreso','Salidas','Hamburguesa',14000,'Efectivo','Si',''],
+  ['TXN0023','09/11/2025',2025,11,'Egreso','Salidas','Birras con Gena',17000,'Tarjeta','Si',''],
+  ['TXN0024','09/11/2025',2025,11,'Egreso','Casa','Sorrentinos',14000,'Tarjeta','No',''],
+  ['TXN0025','09/11/2025',2025,11,'Egreso','Casa','Crema + pan',3600,'Efectivo','Si',''],
+  ['TXN0026','09/11/2025',2025,11,'Egreso','Entretenimiento','Futbol',10600,'Efectivo','Si',''],
+  ['TXN0027','09/11/2025',2025,11,'Egreso','Entretenimiento','Futbol',11778,'Efectivo','Si',''],
+  ['TXN0028','09/11/2025',2025,11,'Egreso','Salidas','Pizza inter',7500,'Efectivo','Si',''],
+  ['TXN0029','09/11/2025',2025,11,'Egreso','Salidas','Facturas',12000,'Efectivo','Si',''],
+  ['TXN0030','11/11/2025',2025,11,'Egreso','Casa','Super',77000,'Tarjeta','No',''],
+  ['TXN0031','12/11/2025',2025,11,'Egreso','Otros','Sube',5000,'Efectivo','Si',''],
+  ['TXN0032','13/11/2025',2025,11,'Egreso','Casa','Super',42000,'Tarjeta','No',''],
+  ['TXN0033','15/11/2025',2025,11,'Egreso','Casa','Chino',5600,'Efectivo','Si',''],
+  ['TXN0034','15/11/2025',2025,11,'Egreso','Entretenimiento','Futbol',9600,'Efectivo','Si',''],
+  ['TXN0035','15/11/2025',2025,11,'Egreso','Entretenimiento','Juntada',8750,'Efectivo','Si',''],
+  ['TXN0036','16/11/2025',2025,11,'Egreso','Casa','Verduleria',1200,'Efectivo','Si',''],
+  ['TXN0037','16/11/2025',2025,11,'Egreso','Casa','Panaderia',9200,'Tarjeta','No',''],
+  ['TXN0038','17/11/2025',2025,11,'Egreso','Ropa','Camisas',46000,'Efectivo','Si',''],
+  ['TXN0039','19/11/2025',2025,11,'Egreso','Almuerzo','Almuerzo',9000,'Efectivo','Si',''],
+  ['TXN0040','19/11/2025',2025,11,'Egreso','Otros','',7000,'Efectivo','Si',''],
+  ['TXN0041','20/11/2025',2025,11,'Egreso','Nafta','',50000,'Efectivo','Si',''],
+  ['TXN0042','24/11/2025',2025,11,'Egreso','Otros','Pizzas Junin',54000,'Efectivo','Si',''],
+  ['TXN0043','24/11/2025',2025,11,'Egreso','Nafta','',50000,'Tarjeta','Si',''],
+  ['TXN0044','24/11/2025',2025,11,'Egreso','Otros','',7000,'Tarjeta','Si',''],
+  ['TXN0045','24/11/2025',2025,11,'Egreso','Nafta','',60000,'Tarjeta','No',''],
+  ['TXN0046','26/11/2025',2025,11,'Egreso','Almuerzo','',9000,'Efectivo','Si',''],
+  ['TXN0047','28/11/2025',2025,11,'Egreso','Casa','Comida',12500,'Tarjeta','No',''],
+  ['TXN0048','27/11/2025',2025,11,'Egreso','Salidas','Fer',7500,'Efectivo','Si',''],
+  ['TXN0049','29/11/2025',2025,11,'Egreso','Salidas','',40000,'Efectivo','Si',''],
+  ['TXN0050','29/11/2025',2025,11,'Egreso','Salidas','',25000,'Efectivo','Si',''],
+  ['TXN0051','01/12/2025',2025,12,'Egreso','Deuda','',257155,'Efectivo','Si',''],
+  ['TXN0052','01/12/2025',2025,12,'Ingreso','Sueldo','Sueldo',2240000,'','Si',''],
+  ['TXN0053','01/12/2025',2025,12,'Egreso','Fijo','Socio',36250,'Tarjeta','Si',''],
+  ['TXN0054','01/12/2025',2025,12,'Ingreso','Caja','Caja',200000,'','Si',''],
+  ['TXN0055','01/12/2025',2025,12,'Egreso','Fijo','Tenis',72000,'Tarjeta','Si',''],
+  ['TXN0056','01/12/2025',2025,12,'Egreso','Fijo','Teléfono',13050,'Efectivo','Si',''],
+  ['TXN0057','01/12/2025',2025,12,'Egreso','Fijo','WiFi',70000,'Tarjeta','No',''],
+  ['TXN0058','01/12/2025',2025,12,'Egreso','Entretenimiento','Cuota AC/DC',33000,'Efectivo','Si',''],
+  ['TXN0059','01/12/2025',2025,12,'Egreso','Casa','Almuerzo Junin',9000,'Efectivo','Si',''],
+  ['TXN0060','03/12/2025',2025,12,'Egreso','Almuerzo','',11000,'Efectivo','Si',''],
+  ['TXN0061','02/12/2025',2025,12,'Egreso','Otros','Nafta',78000,'Tarjeta','No',''],
+  ['TXN0062','04/12/2025',2025,12,'Egreso','Almuerzo','',9800,'Efectivo','Si',''],
+  ['TXN0063','04/12/2025',2025,12,'Egreso','Casa','Morrón y pan',6000,'Efectivo','Si',''],
+  ['TXN0064','04/12/2025',2025,12,'Egreso','Otros','Regalo mamá',20000,'Efectivo','Si',''],
+  ['TXN0065','04/12/2025',2025,12,'Egreso','Otros','Regalo am. inv.',40000,'Efectivo','Si',''],
+  ['TXN0066','04/12/2025',2025,12,'Egreso','Otros','Regalo am. inv.',80000,'Efectivo','Si',''],
+  ['TXN0067','04/12/2025',2025,12,'Egreso','Casa','Super',80000,'Tarjeta','No',''],
+  ['TXN0068','07/12/2025',2025,12,'Egreso','Casa','Tablas',28000,'Efectivo','Si',''],
+  ['TXN0069','07/12/2025',2025,12,'Egreso','Salidas','Asado budget',37000,'Efectivo','Si',''],
+  ['TXN0070','07/12/2025',2025,12,'Egreso','Casa','Panaderia',5100,'Tarjeta','No',''],
+  ['TXN0071','08/12/2025',2025,12,'Egreso','Fijo','YouTube',10000,'Efectivo','Si',''],
+  ['TXN0072','08/12/2025',2025,12,'Egreso','Salidas','Birra',9000,'Efectivo','Si',''],
+  ['TXN0073','08/12/2025',2025,12,'Egreso','Casa','Pizza Teglia',6000,'Efectivo','Si',''],
+  ['TXN0074','09/12/2025',2025,12,'Egreso','Otros','Kiosko',3000,'Efectivo','Si',''],
+  ['TXN0075','10/12/2025',2025,12,'Egreso','Almuerzo','',9800,'Efectivo','Si',''],
+  ['TXN0076','10/12/2025',2025,12,'Egreso','Entretenimiento','Teatro',9000,'Efectivo','Si',''],
+  ['TXN0077','12/12/2025',2025,12,'Egreso','Casa','Panaderia',4800,'Tarjeta','No',''],
+  ['TXN0078','12/12/2025',2025,12,'Egreso','Almuerzo','Pastas',14800,'Efectivo','Si',''],
+  ['TXN0079','12/12/2025',2025,12,'Egreso','Casa','Carniceria',10000,'Efectivo','Si',''],
+  ['TXN0080','12/12/2025',2025,12,'Egreso','Salidas','Juntada',12000,'Efectivo','Si',''],
+  ['TXN0081','12/12/2025',2025,12,'Egreso','Casa','Super',20000,'Tarjeta','No',''],
+  ['TXN0082','12/12/2025',2025,12,'Egreso','Otros','Lavanderia',4700,'Tarjeta','Si',''],
+  ['TXN0083','13/12/2025',2025,12,'Egreso','Salidas','Uber',7100,'Tarjeta','Si',''],
+  ['TXN0084','12/12/2025',2025,12,'Egreso','Salidas','Juntada',27000,'Efectivo','Si',''],
+  ['TXN0085','14/12/2025',2025,12,'Egreso','Entretenimiento','Futbol',8775,'Efectivo','Si',''],
+  ['TXN0086','14/12/2025',2025,12,'Egreso','Salidas','Cena',55000,'Efectivo','Si',''],
+  ['TXN0087','14/12/2025',2025,12,'Egreso','Salidas','Fiesta año nuevo',15000,'Efectivo','Si',''],
+  ['TXN0088','14/12/2025',2025,12,'Egreso','Almuerzo','',10000,'Efectivo','Si',''],
+  ['TXN0089','16/12/2025',2025,12,'Egreso','Casa','Floreria',25000,'Tarjeta','Si',''],
+  ['TXN0090','17/12/2025',2025,12,'Egreso','Almuerzo','',10500,'Efectivo','Si',''],
+  ['TXN0091','17/12/2025',2025,12,'Egreso','Casa','Veneno',5000,'Tarjeta','No',''],
+  ['TXN0092','18/12/2025',2025,12,'Egreso','Almuerzo','',16000,'Efectivo','Si',''],
+  ['TXN0093','18/12/2025',2025,12,'Egreso','Casa','Cena Santi',46000,'Efectivo','Si',''],
+  ['TXN0094','19/12/2025',2025,12,'Egreso','Ropa','Remera budget',35000,'Efectivo','Si',''],
+  ['TXN0095','20/12/2025',2025,12,'Egreso','Salidas','Mates + pizza Nico',15000,'Efectivo','Si',''],
+  ['TXN0096','20/12/2025',2025,12,'Egreso','Otros','Nafta',30000,'Tarjeta','No',''],
+  ['TXN0097','21/12/2025',2025,12,'Egreso','Otros','Cubregrip',15000,'Tarjeta','Si',''],
+  ['TXN0098','21/12/2025',2025,12,'Egreso','Casa','Super',80000,'Tarjeta','Si',''],
+  ['TXN0099','21/12/2025',2025,12,'Egreso','Casa','Pastas',16000,'Tarjeta','Si',''],
+  ['TXN0100','23/12/2025',2025,12,'Egreso','Otros','Nafta',82000,'Tarjeta','Si',''],
+  ['TXN0101','27/12/2025',2025,12,'Egreso','Entretenimiento','Futbol',5000,'Efectivo','Si',''],
+  ['TXN0102','29/12/2025',2025,12,'Egreso','Otros','Peluquero',7000,'Efectivo','Si',''],
+  ['TXN0103','31/12/2025',2025,12,'Egreso','Casa','Cena',15000,'Efectivo','Si',''],
+  ['TXN0104','01/01/2026',2026,1,'Egreso','Deuda','',357850,'Efectivo','Si',''],
+  ['TXN0105','01/01/2026',2026,1,'Ingreso','Sueldo','Sueldo',2240000,'','Si',''],
+  ['TXN0106','01/01/2026',2026,1,'Egreso','Fijo','Socio',36250,'Tarjeta','Si',''],
+  ['TXN0107','01/01/2026',2026,1,'Ingreso','Caja','Caja',200000,'','Si',''],
+  ['TXN0108','01/01/2026',2026,1,'Egreso','Fijo','Tenis',72000,'Tarjeta','Si',''],
+  ['TXN0109','01/01/2026',2026,1,'Egreso','Fijo','Teléfono',13050,'Efectivo','Si',''],
+  ['TXN0110','01/01/2026',2026,1,'Egreso','Fijo','YouTube',10000,'Efectivo','Si',''],
+  ['TXN0111','01/01/2026',2026,1,'Egreso','Fijo','Expensas',140000,'Tarjeta','No',''],
+  ['TXN0112','01/01/2026',2026,1,'Egreso','Fijo','WiFi',70000,'Tarjeta','No',''],
+  ['TXN0113','01/01/2026',2026,1,'Egreso','Entretenimiento','Cuota AC/DC',33000,'Efectivo','Si',''],
+  ['TXN0115','26/12/2025',2025,12,'Egreso','Entretenimiento','Abono CARP',200000,'Tarjeta','Si',''],
+  ['TXN0116','01/01/2026',2026,1,'Egreso','Otros','Junin',40000,'Efectivo','Si',''],
+  ['TXN0117','02/01/2026',2026,1,'Egreso','Casa','Cena pizas',60000,'Efectivo','Si',''],
+  ['TXN0118','03/01/2026',2026,1,'Egreso','Otros','',17400,'Efectivo','Si',''],
+  ['TXN0119','07/01/2026',2026,1,'Egreso','Otros','Combustible',89000,'Tarjeta','Si',''],
+  ['TXN0120','08/01/2026',2026,1,'Egreso','Almuerzo','',9500,'Efectivo','Si',''],
+  ['TXN0121','08/01/2026',2026,1,'Egreso','Casa','Farmacia',7000,'Efectivo','Si',''],
+  ['TXN0122','08/01/2026',2026,1,'Egreso','Casa','Chino',3500,'Efectivo','Si',''],
+  ['TXN0123','09/01/2026',2026,1,'Egreso','Casa','Panaderia',2400,'Efectivo','Si',''],
+  ['TXN0124','09/01/2026',2026,1,'Egreso','Salidas','Cine',26700,'Efectivo','Si',''],
+  ['TXN0125','10/01/2026',2026,1,'Egreso','Casa','Super',33000,'Tarjeta','No',''],
+  ['TXN0126','10/01/2026',2026,1,'Egreso','Casa','Postre',14000,'Efectivo','Si',''],
+  ['TXN0127','11/01/2026',2026,1,'Egreso','Salidas','Asado',21700,'Efectivo','Si',''],
+  ['TXN0128','12/01/2026',2026,1,'Egreso','Almuerzo','',10000,'Efectivo','Si',''],
+  ['TXN0129','13/01/2026',2026,1,'Egreso','Almuerzo','',11000,'Efectivo','Si',''],
+  ['TXN0130','13/01/2026',2026,1,'Egreso','Casa','',22000,'Tarjeta','No',''],
+  ['TXN0131','14/01/2026',2026,1,'Egreso','Otros','Sube',8000,'Efectivo','Si',''],
+  ['TXN0132','15/01/2026',2026,1,'Egreso','Casa','Super',72000,'Tarjeta','No',''],
+  ['TXN0133','17/01/2026',2026,1,'Egreso','Salidas','Makena + asado',50000,'Efectivo','Si',''],
+  ['TXN0134','17/01/2026',2026,1,'Egreso','Salidas','Asado',30000,'Efectivo','Si',''],
+  ['TXN0135','18/01/2026',2026,1,'Egreso','Otros','Peajes',20000,'Efectivo','Si',''],
+  ['TXN0136','18/01/2026',2026,1,'Egreso','Otros','Nafta',42000,'Tarjeta','Si',''],
+  ['TXN0137','18/01/2026',2026,1,'Egreso','Casa','Empanadas',30000,'Tarjeta','No',''],
+  ['TXN0138','19/01/2026',2026,1,'Egreso','Almuerzo','',11500,'Efectivo','Si',''],
+  ['TXN0139','19/01/2026',2026,1,'Egreso','Almuerzo','',11500,'Efectivo','Si',''],
+  ['TXN0140','20/01/2026',2026,1,'Egreso','Salidas','Uber',8000,'Tarjeta','Si',''],
+  ['TXN0141','21/01/2026',2026,1,'Egreso','Otros','Nafta',51000,'Tarjeta','No',''],
+  ['TXN0142','21/01/2026',2026,1,'Egreso','Almuerzo','',11500,'Efectivo','Si',''],
+  ['TXN0143','22/01/2026',2026,1,'Egreso','Almuerzo','',8000,'Efectivo','Si',''],
+  ['TXN0144','23/01/2026',2026,1,'Egreso','Otros','Peluquero',12000,'Efectivo','Si',''],
+  ['TXN0145','24/01/2026',2026,1,'Egreso','Otros','Cumple',230000,'Efectivo','Si',''],
+  ['TXN0146','25/01/2026',2026,1,'Egreso','Otros','Uber',10000,'Efectivo','Si',''],
+  ['TXN0147','25/01/2026',2026,1,'Egreso','Otros','Cumple',55000,'Efectivo','Si',''],
+  ['TXN0148','27/01/2026',2026,1,'Egreso','Ropa','Pantalón 1/3',33333,'Tarjeta','Si',''],
+  ['TXN0149','27/01/2026',2026,1,'Egreso','Otros','Plusmar 1/3',11200,'Tarjeta','Si',''],
+  ['TXN0150','01/02/2026',2026,2,'Egreso','Deuda','',258050,'Efectivo','Si',''],
+  ['TXN0151','01/02/2026',2026,2,'Ingreso','Sueldo','Sueldo',2240000,'','Si',''],
+  ['TXN0152','01/02/2026',2026,2,'Egreso','Fijo','Socio',38000,'Tarjeta','Si',''],
+  ['TXN0153','01/02/2026',2026,2,'Ingreso','Caja','Caja',200000,'','Si',''],
+  ['TXN0154','01/02/2026',2026,2,'Egreso','Fijo','Tenis',82000,'Tarjeta','Si',''],
+  ['TXN0155','01/02/2026',2026,2,'Egreso','Fijo','Teléfono',13050,'Tarjeta','Si',''],
+  ['TXN0156','01/02/2026',2026,2,'Egreso','Fijo','YouTube',10000,'Efectivo','Si',''],
+  ['TXN0157','01/02/2026',2026,2,'Egreso','Fijo','Expensas',140000,'Tarjeta','No',''],
+  ['TXN0158','01/02/2026',2026,2,'Egreso','Fijo','WiFi',70000,'Tarjeta','No',''],
+  ['TXN0159','01/02/2026',2026,2,'Egreso','Entretenimiento','Cuota AC/DC',33000,'Efectivo','Si',''],
+  ['TXN0160','27/01/2026',2026,1,'Egreso','Ropa','Pantalón 2/3',33334,'Tarjeta','Si',''],
+  ['TXN0161','27/01/2026',2026,1,'Egreso','Otros','Plusmar 2/3',11200,'Tarjeta','Si',''],
+  ['TXN0162','09/03/2026',2026,3,'Egreso','Otros','Farmacia 1/3',14667,'Tarjeta','Si',''],
+  ['TXN0293','01/05/2026',2026,5,'Ingreso','Sueldo','Sueldo',2360000,'','Si',''],
+  ['TXN0294','01/05/2026',2026,5,'Egreso','Deuda','',401750,'Efectivo','Si',''],
+  ['TXN0295','01/05/2026',2026,5,'Egreso','Fijo','Socio',38000,'Tarjeta','Si',''],
+  ['TXN0296','01/05/2026',2026,5,'Egreso','Fijo','Tenis',86000,'Tarjeta','Si',''],
+  ['TXN0297','01/05/2026',2026,5,'Egreso','Fijo','Teléfono',14500,'Tarjeta','Si',''],
+  ['TXN0298','01/05/2026',2026,5,'Egreso','Fijo','YouTube',10000,'Efectivo','Si',''],
+  ['TXN0299','01/05/2026',2026,5,'Egreso','Fijo','Expensas',140000,'Tarjeta','No',''],
+  ['TXN0300','01/05/2026',2026,5,'Egreso','Fijo','Gimnasio',40000,'Tarjeta','Si',''],
+  ['TXN0301','01/05/2026',2026,5,'Egreso','Fijo','WiFi',83000,'Tarjeta','No',''],
+  ['TXN0302','01/05/2026',2026,5,'Egreso','Entretenimiento','Cuota AC/DC',33000,'Efectivo','Si',''],
+  ['TXN0303','01/05/2026',2026,5,'Egreso','Ropa','Pantalón',33333,'Tarjeta','Si',''],
+  ['TXN0305','08/05/2026',2026,5,'Egreso','Almuerzo','',10500,'Efectivo','Si',''],
+  ['TXN0306','08/05/2026',2026,5,'Egreso','Almuerzo','',10500,'Efectivo','Si',''],
+  ['TXN0307','09/05/2026',2026,5,'Egreso','Otros','Panaderia',9400,'Efectivo','Si',''],
+  ['TXN0308','10/05/2026',2026,5,'Egreso','Salidas','',15000,'Efectivo','Si',''],
+  ['TXN0309','11/05/2026',2026,5,'Egreso','Otros','Fernet',7000,'Efectivo','Si',''],
+  ['TXN0310','12/05/2026',2026,5,'Egreso','Casa','Super',30000,'Efectivo','Si',''],
+  ['TXN0311','12/05/2026',2026,5,'Egreso','Casa','Pollo',27000,'Tarjeta','Si',''],
+  ['TXN0312','12/05/2026',2026,5,'Egreso','Salidas','Pizzas',16000,'Efectivo','Si',''],
+  ['TXN0313','11/05/2026',2026,5,'Egreso','Salidas','Uber',5500,'Efectivo','Si',''],
+  ['TXN0314','11/05/2026',2026,5,'Egreso','Entretenimiento','Futbol',15000,'Efectivo','Si',''],
+  ['TXN0315','13/05/2026',2026,5,'Egreso','Almuerzo','',12500,'Efectivo','Si',''],
+  ['TXN0316','14/05/2026',2026,5,'Egreso','Almuerzo','',10500,'Efectivo','Si',''],
+  ['TXN0317','15/05/2026',2026,5,'Egreso','Salidas','Café',8000,'Efectivo','Si',''],
+  ['TXN0318','16/05/2026',2026,5,'Egreso','Almuerzo','',11500,'Efectivo','Si',''],
+  ['TXN0319','12/05/2026',2026,5,'Egreso','Salidas','Asado',30000,'Efectivo','Si',''],
+  ['TXN0320','16/05/2026',2026,5,'Egreso','Salidas','Tesis',11000,'Efectivo','Si',''],
+  ['TXN0321','16/05/2026',2026,5,'Egreso','Casa','Pizza',29000,'Efectivo','Si',''],
+  ['TXN0322','17/05/2026',2026,5,'Egreso','Entretenimiento','Futbol',12500,'Efectivo','Si',''],
+  ['TXN0323','17/05/2026',2026,5,'Egreso','Salidas','Birras',6300,'Efectivo','Si',''],
+  ['TXN0324','17/05/2026',2026,5,'Egreso','Salidas','Pizzas',12500,'Efectivo','Si',''],
+  ['TXN0325','18/05/2026',2026,5,'Egreso','Salidas','Comida',14000,'Efectivo','Si',''],
+  ['TXN0326','19/05/2026',2026,5,'Egreso','Casa','Super',25000,'Efectivo','Si',''],
+  ['TXN0327','20/05/2026',2026,5,'Egreso','Entretenimiento','vs Blooming',11500,'Efectivo','Si',''],
+  ['TXN0328','20/05/2026',2026,5,'Egreso','Casa','Carniceria',67000,'Tarjeta','Si',''],
+  ['TXN0329','20/05/2026',2026,5,'Egreso','Casa','Super',8300,'Tarjeta','No',''],
+  ['TXN0330','01/06/2026',2026,6,'Ingreso','Sueldo','Sueldo',2240000,'','Si',''],
+  ['TXN0331','01/06/2026',2026,6,'Egreso','Deuda','',211833,'Efectivo','Si',''],
+  ['TXN0332','01/06/2026',2026,6,'Egreso','Fijo','Socio',38000,'Tarjeta','Si',''],
+  ['TXN0333','01/06/2026',2026,6,'Egreso','Fijo','Tenis',86000,'Tarjeta','Si',''],
+  ['TXN0334','01/06/2026',2026,6,'Egreso','Fijo','Teléfono',14500,'Tarjeta','Si',''],
+  ['TXN0335','01/06/2026',2026,6,'Egreso','Fijo','YouTube',11000,'Efectivo','Si',''],
+  ['TXN0336','01/06/2026',2026,6,'Egreso','Fijo','Expensas',140000,'Tarjeta','No',''],
+  ['TXN0337','01/06/2026',2026,6,'Egreso','Fijo','Gimnasio',40000,'Tarjeta','Si',''],
+  ['TXN0338','01/06/2026',2026,6,'Egreso','Fijo','WiFi',83000,'Tarjeta','No',''],
+];
+
+const FIJOS = [
+  {nombre:'Socio',monto:38000,pago:'Tarjeta',yo:'Si'},
+  {nombre:'Tenis',monto:86000,pago:'Tarjeta',yo:'Si'},
+  {nombre:'Teléfono',monto:14500,pago:'Tarjeta',yo:'Si'},
+  {nombre:'YouTube',monto:11000,pago:'Efectivo',yo:'Si'},
+  {nombre:'Expensas',monto:140000,pago:'Tarjeta',yo:'No'},
+  {nombre:'Gimnasio',monto:40000,pago:'Tarjeta',yo:'Si'},
+  {nombre:'WiFi',monto:83000,pago:'Tarjeta',yo:'No'},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const SEED_IDS = new Set(TXN_SEED.map(r => r[0]));
+let txns = TXN_SEED.map(r => ({
+  id:r[0],fecha:r[1],año:r[2],mes:r[3],tipo:r[4],cat:r[5],
+  motivo:r[6],monto:r[7],pago:r[8],yo:r[9],obs:r[10]
+}));
+
+// Cargar adiciones locales previas
+try {
+  const saved = localStorage.getItem('gast_extra');
+  if (saved) {
+    const extra = JSON.parse(saved);
+    const extraIds = new Set(extra.map(t => t.id));
+    txns = txns.filter(t => !extraIds.has(t.id)); // evitar duplicados
+    txns = [...txns, ...extra];
+  }
+} catch(e) {}
+
+let curYear = 2026, curMes = 5;
+let tipoForm = 'egreso';
+let togYo = true, togCuotas = false;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const fmt      = n => '$' + Math.round(n).toLocaleString('es-AR');
+const fmtShort = n => {
+  if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return '$' + (n/1000).toFixed(0) + 'K';
+  return fmt(n);
+};
+
+function txnsMes(y, m)   { return txns.filter(t => t.año===y && t.mes===m); }
+function egresosMes(y,m) { return txnsMes(y,m).filter(t => t.tipo==='Egreso'); }
+function ingresosMes(y,m){ return txnsMes(y,m).filter(t => t.tipo==='Ingreso'); }
+function mesLabel(y,m)   { return MES_NOM[m-1] + ' ' + y; }
+function mesCod(y,m)     { return MES_COD[m-1] + ' ' + String(y).slice(2); }
+
+function getNextId() {
+  const nums = txns
+    .map(t => parseInt(t.id.replace(/[^0-9]/g,'')) || 0)
+    .filter(n => !isNaN(n));
+  return 'TXN' + String(Math.max(0, ...nums) + 1).padStart(4, '0');
+}
+
+function saveLocal() {
+  const extra = txns.filter(t => !SEED_IDS.has(t.id));
+  try { localStorage.setItem('gast_extra', JSON.stringify(extra)); } catch(e) {}
+}
+
+function setSyncStatus(txt, ok) {
+  const dot = document.getElementById('sdot');
+  const span = document.getElementById('sync-txt');
+  if (span) span.textContent = txt;
+  if (dot) dot.className = 'sync-dot ' + (ok === true ? '' : ok === null ? 'loading' : 'off');
+}
+
+// ── SYNC CON SHEET ────────────────────────────────────────────────────────────
+const scriptConfigured = SCRIPT_URL && SCRIPT_URL !== 'TU_URL_AQUI';
+
+async function loadData() {
+  if (!scriptConfigured) {
+    document.getElementById('setup-banner').style.display = 'block';
+    setSyncStatus('Sin conectar', false);
+    notify('Configurá el SCRIPT_URL para conectar con Google Sheets', 'warn');
+    return;
+  }
+  setSyncStatus('Cargando...', null);
+  try {
+    const res  = await fetch(SCRIPT_URL);
+    const json = await res.json();
+    if (json.ok && Array.isArray(json.data)) {
+      // Reemplazar con datos del Sheet, preservar adiciones locales pendientes
+      const sheetIds = new Set(json.data.map(t => t.id));
+      const sheetTxns = json.data.map(t => ({
+        id:     String(t.id),
+        fecha:  String(t.fecha),
+        año:    Number(t.año),
+        mes:    Number(t.mes),
+        tipo:   String(t.tipo),
+        cat:    String(t.cat),
+        motivo: String(t.motivo || ''),
+        monto:  Number(t.monto),
+        pago:   String(t.pago || ''),
+        yo:     String(t.yo || 'Si'),
+        obs:    String(t.obs || '')
+      }));
+      // Mantener sólo locales que NO están ya en el Sheet
+      const localExtra = txns.filter(t => !SEED_IDS.has(t.id) && !sheetIds.has(t.id));
+      txns = [...sheetTxns, ...localExtra];
+      setSyncStatus('Sincronizado', true);
+      notify('Datos actualizados ✓', 'ok');
+      renderActive();
+    } else {
+      setSyncStatus('Error', false);
+      notify('Error al leer Sheet: ' + (json.error || 'respuesta inválida'), 'err');
+    }
+  } catch(err) {
+    setSyncStatus('Sin conexión', false);
+    notify('No se pudo conectar con el Sheet', 'err');
+  }
+}
+
+async function postToSheet(newTxns) {
+  if (!scriptConfigured) return false;
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(newTxns),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const json = await res.json();
+    return json.ok === true;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function goTab(tab) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + tab).classList.add('on');
+  document.querySelector(`.nav-btn[onclick="goTab('${tab}')"]`).classList.add('on');
+  renderActive();
+}
+
+function renderActive() {
+  const active = document.querySelector('.tab-pane.on')?.id?.replace('tab-','');
+  if (active === 'dashboard')  renderDash();
+  if (active === 'historial')  renderHistorial();
+  if (active === 'resumen')    renderResumen();
+  if (active === 'categorias') renderCategorias();
+  if (active === 'fijos')      renderFijos();
+}
+
+// ── MES NAV ───────────────────────────────────────────────────────────────────
+function chgMes(d) {
+  curMes += d;
+  if (curMes < 1)  { curMes = 12; curYear--; }
+  if (curMes > 12) { curMes = 1;  curYear++; }
+  ['','2'].forEach(s => {
+    const t = document.getElementById('mes-title' + s);
+    const c = document.getElementById('mes-code' + s);
+    if (t) t.textContent = mesLabel(curYear, curMes);
+    if (c) c.textContent = mesCod(curYear, curMes);
+  });
+  renderActive();
+}
+
+// ── DONUT FIJOS/VARIABLES ─────────────────────────────────────────────────────
+function renderDonut(fijos, variables, total) {
+  if (total === 0) return '<div class="empty">Sin egresos este mes</div>';
+  const pF  = fijos / total;
+  const pV  = variables / total;
+  const r   = 44, cx = 55, cy = 55, sw = 16;
+  const circ = 2 * Math.PI * r;
+  const fArc = pF * circ;
+  const vArc = pV * circ;
+
+  return `<div class="donut-wrap">
+    <svg class="donut-svg" viewBox="0 0 110 110" width="120" height="120">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--s3)" stroke-width="${sw}"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2563eb" stroke-width="${sw}"
+        stroke-dasharray="${fArc} ${circ}" transform="rotate(-90 ${cx} ${cy})"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#d97706" stroke-width="${sw}"
+        stroke-dasharray="${vArc} ${circ}" stroke-dashoffset="${-fArc}" transform="rotate(-90 ${cx} ${cy})"/>
+      <text x="${cx}" y="${cy-5}" text-anchor="middle" font-size="16" font-weight="700" fill="var(--t1)" font-family="DM Mono,monospace">
+        ${Math.round(pF*100)}%
+      </text>
+      <text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="9" fill="var(--t3)" font-family="DM Sans,sans-serif" font-weight="600" letter-spacing="1">
+        FIJOS
+      </text>
+    </svg>
+    <div class="donut-legend">
+      <div class="legend-row">
+        <div class="legend-header">
+          <span class="legend-label">
+            <span class="legend-dot" style="background:#2563eb"></span>
+            Fijos
+          </span>
+          <span class="legend-val" style="color:#2563eb">${fmtShort(fijos)}</span>
+        </div>
+        <div class="legend-bar">
+          <div class="legend-bar-fill" style="width:${Math.round(pF*100)}%;background:#2563eb"></div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-header">
+          <span class="legend-label">
+            <span class="legend-dot" style="background:#d97706"></span>
+            Variables
+          </span>
+          <span class="legend-val" style="color:#d97706">${fmtShort(variables)}</span>
+        </div>
+        <div class="legend-bar">
+          <div class="legend-bar-fill" style="width:${Math.round(pV*100)}%;background:#d97706"></div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <span style="font-size:11px;color:var(--t3);font-weight:600">Total egresos</span>
+        <span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--t1)">${fmt(total)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDash() {
+  const egrs     = egresosMes(curYear, curMes);
+  const ings     = ingresosMes(curYear, curMes);
+  const totalEgr = egrs.reduce((s,t) => s+t.monto, 0);
+  const totalIng = ings.reduce((s,t) => s+t.monto, 0);
+  const bal      = totalIng - totalEgr;
+  const fijos    = egrs.filter(t => t.cat==='Fijo').reduce((s,t) => s+t.monto, 0);
+  const variables = totalEgr - fijos;
+  const pctFijo  = totalEgr > 0 ? Math.round(fijos/totalEgr*100) : 0;
+
+  document.getElementById('m-ing').textContent = fmt(totalIng);
+  document.getElementById('m-ing-n').textContent = ings.length + ' movimiento' + (ings.length!==1?'s':'');
+  document.getElementById('m-egr').textContent = fmt(totalEgr);
+  document.getElementById('m-egr-n').textContent = egrs.length + ' movimiento' + (egrs.length!==1?'s':'');
+  const balEl = document.getElementById('m-bal');
+  balEl.textContent = fmt(bal);
+  balEl.className = 'metric-val ' + (bal >= 0 ? 'c-ing' : 'c-egr');
+  document.getElementById('m-fijo').textContent = fmt(fijos);
+  document.getElementById('m-fijo-pct').textContent = pctFijo + '% del egreso';
+
+  // Donut Fijos/Variables
+  document.getElementById('chart-fijo-var').innerHTML = renderDonut(fijos, variables, totalEgr);
+
+  // Por categoría (barras)
+  const byCat = {};
+  egrs.forEach(t => { byCat[t.cat] = (byCat[t.cat]||0) + t.monto; });
+  const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+  const maxC = sorted.length ? sorted[0][1] : 1;
+  document.getElementById('chart-cats').innerHTML = sorted.length
+    ? sorted.map(([cat, val]) => `
+        <div class="bar-row">
+          <div class="bar-lbl">${cat}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round(val/maxC*100)}%;background:${CAT_COL[cat]||'#aaa'}"></div></div>
+          <div class="bar-val">${fmtShort(val)}</div>
+        </div>`).join('')
+    : '<div class="empty">Sin gastos este mes</div>';
+
+  // Sparkline 8 meses
+  const spark = [];
+  for (let i = 7; i >= 0; i--) {
+    let m = curMes - i, y = curYear;
+    if (m < 1) { m += 12; y--; }
+    const eg = egresosMes(y, m).reduce((s,t) => s+t.monto, 0);
+    spark.push({ lbl: MES_COD[m-1], val: eg, cur: i===0 });
+  }
+  const maxS = Math.max(...spark.map(s => s.val), 1);
+  document.getElementById('spark-bars').innerHTML = spark.map(s =>
+    `<div class="spark-bar" style="height:${Math.max(4,Math.round(s.val/maxS*76))}px;background:${s.cur?'var(--acc)':'var(--s4)'};border-radius:3px 3px 0 0" data-tip="${s.lbl}: ${fmt(s.val)}"></div>`
+  ).join('');
+  document.getElementById('spark-lbls').innerHTML = spark.map(s =>
+    `<div class="spark-lbl" style="color:${s.cur?'var(--acc)':'var(--t3)'}">${s.lbl}</div>`
+  ).join('');
+
+  // Recientes
+  const rec = [...egrs,...ings].sort((a,b) => {
+    const pa = a.fecha.split('/'); const pb = b.fecha.split('/');
+    return new Date(pb[2],pb[1]-1,pb[0]) - new Date(pa[2],pa[1]-1,pa[0]);
+  }).slice(0, 10);
+  document.getElementById('recent-txns').innerHTML = rec.length
+    ? `<table class="txn-tbl"><thead><tr>
+        <th>Fecha</th><th>Cat.</th><th>Motivo</th><th>Pago</th><th style="text-align:right">Monto</th>
+      </tr></thead><tbody>` +
+      rec.map(t => `<tr>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${t.fecha.slice(0,5)}</td>
+        <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.motivo||'—'}</td>
+        <td><span class="pago-txt">${t.pago||''} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</span></td>
+        <td class="${t.tipo==='Ingreso'?'monto-ing':'monto-egr'}">${t.tipo==='Ingreso'?'+':''}${fmt(t.monto)}</td>
+      </tr>`).join('') + `</tbody></table>`
+    : '<div class="empty">Sin movimientos este mes</div>';
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────────────────────
+function renderHistorial() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const fTipo  = document.getElementById('flt-tipo').value;
+  const fCat   = document.getElementById('flt-cat').value;
+  const fPago  = document.getElementById('flt-pago').value;
+  const fYo    = document.getElementById('flt-yo').value;
+
+  let rows = txnsMes(curYear, curMes).filter(t => {
+    if (fTipo && t.tipo !== fTipo) return false;
+    if (fCat  && t.cat  !== fCat)  return false;
+    if (fPago && t.pago !== fPago) return false;
+    if (fYo   && t.yo   !== fYo)   return false;
+    if (search && !t.motivo.toLowerCase().includes(search) && !t.cat.toLowerCase().includes(search)) return false;
+    return true;
+  }).sort((a,b) => {
+    const pa = a.fecha.split('/'); const pb = b.fecha.split('/');
+    return new Date(pb[2],pb[1]-1,pb[0]) - new Date(pa[2],pa[1]-1,pa[0]);
+  });
+
+  document.getElementById('hist-count').textContent = rows.length + ' filas';
+  document.getElementById('hist-body').innerHTML = rows.length
+    ? `<table class="txn-tbl"><thead><tr>
+        <th>Fecha</th><th>Tipo</th><th>Cat.</th><th>Motivo</th><th>Pago</th><th>Obs.</th><th style="text-align:right">Monto</th>
+      </tr></thead><tbody>` +
+      rows.map(t => `<tr>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${t.fecha}</td>
+        <td><span class="${t.tipo==='Ingreso'?'tipo-ing':'tipo-egr'}">${t.tipo}</span></td>
+        <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
+        <td>${t.motivo||'—'} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</td>
+        <td><span class="pago-txt">${t.pago||''}</span></td>
+        <td style="font-size:11px;color:var(--t3)">${t.obs||''}</td>
+        <td class="${t.tipo==='Ingreso'?'monto-ing':'monto-egr'}">${t.tipo==='Ingreso'?'+':''}${fmt(t.monto)}</td>
+      </tr>`).join('') + `</tbody></table>`
+    : '<div class="empty">Sin resultados</div>';
+}
+
+// ── RESUMEN ───────────────────────────────────────────────────────────────────
+function renderResumen() {
+  const seen = new Set();
+  txns.forEach(t => {
+    if (t.año >= 2025 && t.año <= 2027) seen.add(t.año*100 + t.mes);
+  });
+  const meses = [...seen].sort((a,b) => b-a).map(k => ({ y: Math.floor(k/100), m: k%100 }));
+
+  let totalIng = 0, totalEgr = 0, totalFij = 0, totalBal = 0;
+  const rows = meses.map(({y, m}) => {
+    const egrs  = egresosMes(y, m);
+    const ings  = ingresosMes(y, m);
+    const tEgr  = egrs.reduce((s,t) => s+t.monto, 0);
+    const tIng  = ings.reduce((s,t) => s+t.monto, 0);
+    const tFij  = egrs.filter(t => t.cat==='Fijo').reduce((s,t) => s+t.monto, 0);
+    const tVar  = tEgr - tFij;
+    const bal   = tIng - tEgr;
+    const pct   = tEgr > 0 ? Math.round(tFij/tEgr*100) : 0;
+    totalIng += tIng; totalEgr += tEgr; totalFij += tFij; totalBal += bal;
+    return `<tr>
+      <td>${mesLabel(y,m)}</td>
+      <td class="r-pos">${tIng > 0 ? fmt(tIng) : '—'}</td>
+      <td class="r-neg">${tEgr > 0 ? fmt(tEgr) : '—'}</td>
+      <td style="color:var(--blue)">${tFij > 0 ? fmt(tFij) : '—'}</td>
+      <td style="color:var(--amber)">${tVar > 0 ? fmt(tVar) : '—'}</td>
+      <td class="${bal>=0?'r-pos':'r-neg'}">${fmt(bal)}</td>
+      <td style="color:var(--t3)">${pct > 0 ? pct+'%' : '—'}</td>
+    </tr>`;
+  });
+
+  document.getElementById('res-body').innerHTML = `
+    <table class="res-table"><thead><tr>
+      <th style="text-align:left">Período</th><th>Ingresos</th><th>Egresos</th>
+      <th>Fijos</th><th>Variables</th><th>Balance</th><th>% Fijos</th>
+    </tr></thead><tbody>${rows.join('')}
+    <tr>
+      <td>TOTAL</td>
+      <td class="r-pos cat-total">${fmt(totalIng)}</td>
+      <td class="r-neg cat-total">${fmt(totalEgr)}</td>
+      <td style="color:var(--blue)" class="cat-total">${fmt(totalFij)}</td>
+      <td style="color:var(--amber)" class="cat-total">${fmt(totalEgr-totalFij)}</td>
+      <td class="${totalBal>=0?'r-pos':'r-neg'} cat-total">${fmt(totalBal)}</td>
+      <td class="cat-total">—</td>
+    </tr></tbody></table>`;
+}
+
+// ── CATEGORÍAS ────────────────────────────────────────────────────────────────
+function renderCategorias() {
+  const cats = ['Fijo','Casa','Salidas','Almuerzo','Entretenimiento','Ropa','Nafta','Deuda','Otros'];
+  const seen = new Set();
+  txns.forEach(t => {
+    const k = t.año*100 + t.mes;
+    if (t.año >= 2025 && t.año <= 2027) seen.add(k);
+  });
+  const validMeses = [...seen].sort((a,b) => a-b).map(k => ({ y: Math.floor(k/100), m: k%100 }));
+
+  const hdrs = `<tr><th>Categoría</th>${validMeses.map(({y,m}) =>
+    `<th>${MES_COD[m-1]} ${String(y).slice(2)}</th>`).join('')}<th>TOTAL</th></tr>`;
+
+  const bodyRows = cats.map(cat => {
+    let total = 0;
+    const cells = validMeses.map(({y,m}) => {
+      const val = egresosMes(y,m).filter(t => t.cat===cat).reduce((s,t) => s+t.monto, 0);
+      total += val;
+      return `<td style="color:${val>0?(CAT_COL[cat]||'#aaa'):'var(--t3)'}">${val>0?fmt(val):'—'}</td>`;
+    }).join('');
+    return `<tr><td><span class="cat-pill p-${cat}">${cat}</span></td>${cells}<td style="color:${CAT_COL[cat]};font-weight:700">${total>0?fmt(total):'—'}</td></tr>`;
+  });
+
+  const totals = validMeses.map(({y,m}) => {
+    const v = egresosMes(y,m).reduce((s,t) => s+t.monto, 0);
+    return `<td class="cat-total r-neg">${v>0?fmt(v):'—'}</td>`;
+  }).join('');
+  const grandTotal = txns.filter(t => t.tipo==='Egreso' && t.año>=2025).reduce((s,t) => s+t.monto, 0);
+
+  document.getElementById('cat-body').innerHTML = `
+    <table class="cat-table"><thead>${hdrs}</thead><tbody>
+      ${bodyRows.join('')}
+      <tr><td class="cat-total">TOTAL</td>${totals}<td class="cat-total r-neg">${fmt(grandTotal)}</td></tr>
+    </tbody></table>`;
+}
+
+// ── FIJOS ─────────────────────────────────────────────────────────────────────
+function renderFijos() {
+  document.getElementById('fijos-body').innerHTML = FIJOS.map(f => `
+    <div class="fijo-item">
+      <div>
+        <div class="fijo-name">${f.nombre}</div>
+        <div class="fijo-meta">${f.pago} · ${f.yo==='Si'?'Vos':'Compartido'}</div>
+      </div>
+      <div class="fijo-monto">${fmt(f.monto)}</div>
+    </div>`).join('');
+  const total = FIJOS.reduce((s,f) => s+f.monto, 0);
+  document.getElementById('fijo-total').textContent = fmt(total);
+}
+
+// ── FORM ──────────────────────────────────────────────────────────────────────
+function abrirForm(tipo) {
+  tipoForm = tipo || 'egreso';
+  const hoy = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('f-fecha').value = `${hoy.getFullYear()}-${pad(hoy.getMonth()+1)}-${pad(hoy.getDate())}`;
+  document.getElementById('f-monto').value = '';
+  document.getElementById('f-motivo').value = '';
+  document.getElementById('f-obs').value = '';
+  togYo = true; togCuotas = false;
+  document.getElementById('tog-yo').className = 'ftoggle on';
+  document.getElementById('tog-cuotas').className = 'ftoggle';
+  document.getElementById('cuotas-panel').style.display = 'none';
+  setTipo(tipoForm, document.querySelector('.seg-btn'));
+  document.getElementById('form-overlay').classList.add('open');
+  document.getElementById('f-monto').focus();
+}
+
+function cerrarForm() { document.getElementById('form-overlay').classList.remove('open'); }
+
+function setTipo(t, btn) {
+  tipoForm = t;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  const esEg = t === 'egreso';
+  document.getElementById('fg-cat').style.display     = esEg ? '' : 'none';
+  document.getElementById('fg-cat-ing').style.display = esEg ? 'none' : '';
+  document.getElementById('fg-pago').style.display    = esEg ? '' : 'none';
+  document.getElementById('fg-yo').style.display      = esEg ? '' : 'none';
+  document.getElementById('fg-cuotas').style.display  = esEg ? '' : 'none';
+}
+
+function toggleYo() {
+  togYo = !togYo;
+  document.getElementById('tog-yo').className = 'ftoggle ' + (togYo ? 'on' : '');
+}
+
+function toggleCuotas() {
+  togCuotas = !togCuotas;
+  document.getElementById('tog-cuotas').className = 'ftoggle ' + (togCuotas ? 'on' : '');
+  document.getElementById('cuotas-panel').style.display = togCuotas ? 'flex' : 'none';
+}
+
+async function guardar() {
+  const fStr  = document.getElementById('f-fecha').value;
+  const monto = parseFloat(document.getElementById('f-monto').value);
+  if (!fStr || !monto || monto <= 0) { notify('Completá fecha y monto','err'); return; }
+
+  const [fy, fm, fd] = fStr.split('-').map(Number);
+  const fecha  = `${String(fd).padStart(2,'0')}/${String(fm).padStart(2,'0')}/${fy}`;
+  const motivo = document.getElementById('f-motivo').value;
+  const obs    = document.getElementById('f-obs').value;
+  const esEg   = tipoForm === 'egreso';
+  const cat    = esEg ? document.getElementById('f-cat').value : document.getElementById('f-cat-ing').value;
+  const pago   = esEg ? document.getElementById('f-pago').value : '';
+  const yo     = esEg && togYo ? 'Si' : 'No';
+
+  const newTxns = [];
+  if (esEg && togCuotas) {
+    const nc    = parseInt(document.getElementById('f-ncuotas').value);
+    const cuota = Math.round(monto / nc);
+    for (let i = 0; i < nc; i++) {
+      const d   = new Date(fy, fm-1+i, fd);
+      const fec = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      const id  = getNextId();
+      newTxns.push({ id, fecha:fec, año:d.getFullYear(), mes:d.getMonth()+1,
+        tipo:'Egreso', cat, motivo:motivo+(nc>1?` (${i+1}/${nc})`:'' ), monto:cuota, pago, yo, obs });
+    }
+  } else {
+    newTxns.push({ id:getNextId(), fecha, año:fy, mes:fm,
+      tipo:esEg?'Egreso':'Ingreso', cat, motivo, monto, pago, yo, obs });
+  }
+
+  // Agregar localmente primero (optimista)
+  txns = [...txns, ...newTxns];
+  saveLocal();
+  cerrarForm();
+  renderActive();
+
+  // Guardar en Sheet
+  const btn = document.getElementById('btn-guardar');
+  if (scriptConfigured) {
+    btn.disabled = true;
+    const ok = await postToSheet(newTxns);
+    btn.disabled = false;
+    if (ok) {
+      notify(newTxns.length > 1 ? `${newTxns.length} cuotas guardadas en Sheet ✓` : 'Guardado en Sheet ✓', 'ok');
+    } else {
+      notify('Guardado local (reintentá sincronizar)', 'warn');
+    }
+  } else {
+    notify(newTxns.length > 1 ? `${newTxns.length} cuotas guardadas ✓` : 'Guardado ✓', 'ok');
+  }
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = txnsMes(curYear, curMes);
+  const csv = [
+    ['ID','Fecha','Año','Mes','Tipo','Categoría','Motivo','Monto','Pago','Yo','Obs'].join(','),
+    ...rows.map(t => [t.id,t.fecha,t.año,t.mes,t.tipo,t.cat,`"${t.motivo}"`,t.monto,t.pago,t.yo,`"${t.obs}"`].join(','))
+  ].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'}));
+  a.download = `gastos_${MES_COD[curMes-1]}${String(curYear).slice(2)}.csv`;
+  a.click();
+  notify('CSV descargado ✓');
+}
+
+// ── NOTIFY ────────────────────────────────────────────────────────────────────
+function notify(msg, type='') {
+  const el = document.getElementById('notify');
+  el.textContent = msg;
+  el.className = 'notify show' + (type ? ' '+type : '');
+  setTimeout(() => el.className = 'notify', 2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('mes-title').textContent  = mesLabel(curYear, curMes);
+document.getElementById('mes-code').textContent   = mesCod(curYear, curMes);
+document.getElementById('mes-title2').textContent = mesLabel(curYear, curMes);
+document.getElementById('mes-code2').textContent  = mesCod(curYear, curMes);
+
+if (!scriptConfigured) {
+  document.getElementById('setup-banner').style.display = 'block';
+  setSyncStatus('Sin conectar', false);
+}
+
+renderDash();
+renderFijos();
+
+// Cerrar form con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') cerrarForm();
+});
+
+// Auto-sync si está configurado
+if (scriptConfigured) {
+  loadData();
+}
+</script>
+</body>
+</html>
