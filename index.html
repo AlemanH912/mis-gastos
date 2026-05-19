@@ -90,9 +90,9 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .spark-months{display:flex;gap:5px;align-items:flex-end;height:80px;margin:8px 0 4px}
 .spark-bar{flex:1;border-radius:3px 3px 0 0;transition:.4s;position:relative;cursor:default;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
 .spark-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--t1);color:#fff;font-size:11px;padding:4px 8px;border-radius:var(--r3);white-space:nowrap;font-family:var(--mono);pointer-events:none;z-index:10}
-.spark-seg-nyo{width:100%;background:#f97316;transition:.4s}
-.spark-seg-yo{width:100%;background:var(--s4);transition:.4s}
-.spark-seg-yo.cur{background:var(--acc)}
+.spark-seg-nyo{width:100%;background:#93c5fd;transition:.4s}
+.spark-seg-yo{width:100%;background:#1e40af;transition:.4s}
+.spark-seg-yo.cur{background:#1e3a8a}
 .spark-legend{display:flex;gap:12px;margin-top:6px}
 .spark-legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t3)}
 .spark-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
@@ -214,11 +214,46 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .status-row{display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:4px}
 .status-txt{font-size:11px;color:var(--t3);font-family:var(--mono)}
 
+/* FIJO EDITABLE */
+.fijo-input{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--blue);background:transparent;border:none;border-bottom:2px solid var(--b1);width:110px;text-align:right;outline:none;padding:2px 4px;transition:.15s}
+.fijo-input:focus{border-color:var(--acc)}
+.btn-cargar-fijos{width:100%;padding:11px;background:var(--acc);border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:.15s;margin-top:14px;box-shadow:0 2px 8px rgba(37,99,235,.2)}
+.btn-cargar-fijos:hover{background:var(--acc2)}
+.btn-cargar-fijos:disabled{opacity:.5;cursor:not-allowed}
+.btn-cargar-fijos.loaded{background:var(--green)}
+
+/* TARJETA CARD */
+.tarjeta-card{background:linear-gradient(135deg,#1e40af,#3b82f6);border-radius:var(--r);padding:18px 20px;color:#fff;margin-bottom:14px}
+.tarjeta-ttl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;opacity:.7;font-weight:600;margin-bottom:6px}
+.tarjeta-monto{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-1px;margin-bottom:4px}
+.tarjeta-periodo{font-size:11px;opacity:.65}
+.tarjeta-setting{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--b1)}
+.tarjeta-setting label{font-size:12px;color:var(--t2);font-weight:500}
+.tarjeta-day-inp{width:60px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r3);padding:6px 8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--t1);text-align:center;outline:none;transition:.15s}
+.tarjeta-day-inp:focus{border-color:var(--acc)}
+
 @media(max-width:768px){
   .metrics{grid-template-columns:1fr 1fr}
   .dash-row{grid-template-columns:1fr}
   .fijo-grid{grid-template-columns:1fr}
   .donut-wrap{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:600px){
+  .topbar{padding:0 12px;height:auto;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
+  .logo{flex:1}
+  .nav{order:3;width:100%;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav-btn{flex-shrink:0;font-size:12px;padding:6px 10px}
+  .sync-btn .sync-txt-label{display:none}
+  .main{padding:12px}
+  .card{padding:14px}
+  .metrics{grid-template-columns:1fr 1fr;gap:8px}
+  .metric{padding:12px 14px}
+  .metric-val{font-size:18px}
+  .form-grid{grid-template-columns:1fr}
+  .fg.full{grid-column:1}
+  .mes-title{font-size:18px}
+  .tarjeta-monto{font-size:22px}
 }
 </style>
 </head>
@@ -235,7 +270,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
   </div>
   <button class="sync-btn" id="sync-btn" onclick="loadData()">
     <span class="sync-dot off" id="sdot"></span>
-    <span id="sync-txt">Sincronizar</span>
+    <span id="sync-txt" class="sync-txt-label">Sincronizar</span>
   </button>
   <button class="add-btn" onclick="abrirForm('egreso')">+ Gasto</button>
 </div>
@@ -341,16 +376,24 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
   <!-- FIJOS -->
   <div class="tab-pane" id="tab-fijos">
     <div class="card" style="margin-bottom:14px">
-      <div class="card-ttl">Gastos fijos mensuales</div>
+      <div class="card-ttl">Gastos fijos mensuales — editá los montos actuales</div>
       <div class="fijo-grid" id="fijos-body"></div>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:12px;color:var(--t3);font-weight:500">Total mensual fijos</span>
         <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--blue)" id="fijo-total">$0</span>
       </div>
+      <button class="btn-cargar-fijos" id="btn-cargar-fijos" onclick="cargarFijos()">
+        Cargar fijos — este mes
+      </button>
     </div>
-    <div style="font-size:12px;color:var(--t3);line-height:2;padding:0 2px">
-      Para actualizar montos editá directamente el Google Sheet en la hoja <strong style="color:var(--t2)">Fijos</strong>.<br>
-      Al inicio de cada mes agregá los fijos con fecha del 1° del mes.
+    <div class="card">
+      <div class="card-ttl">Tarjeta de crédito</div>
+      <div class="tarjeta-setting">
+        <label>Mi tarjeta cierra el día</label>
+        <input class="tarjeta-day-inp" type="number" id="cierre-day" min="1" max="31" value="15" onchange="saveCierre(this.value)">
+        <span style="font-size:12px;color:var(--t3)">de cada mes</span>
+      </div>
+      <div id="tarjeta-preview" style="margin-top:12px"></div>
     </div>
   </div>
 
@@ -658,7 +701,7 @@ const TXN_SEED = [
   ['TXN0338','01/06/2026',2026,6,'Egreso','Fijo','WiFi',83000,'Tarjeta','No',''],
 ];
 
-const FIJOS = [
+const FIJOS_DEFAULT = [
   {nombre:'Socio',monto:38000,pago:'Tarjeta',yo:'Si'},
   {nombre:'Tenis',monto:86000,pago:'Tarjeta',yo:'Si'},
   {nombre:'Teléfono',monto:14500,pago:'Tarjeta',yo:'Si'},
@@ -667,6 +710,8 @@ const FIJOS = [
   {nombre:'Gimnasio',monto:40000,pago:'Tarjeta',yo:'Si'},
   {nombre:'WiFi',monto:83000,pago:'Tarjeta',yo:'No'},
 ];
+let fijosData = (() => { try { const s=localStorage.getItem('gast_fijos'); return s?JSON.parse(s):FIJOS_DEFAULT.map(f=>({...f})); } catch(e){ return FIJOS_DEFAULT.map(f=>({...f})); } })();
+let cierreTarjeta = parseInt(localStorage.getItem('gast_cierre')||'15');
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const SEED_IDS = new Set(TXN_SEED.map(r => r[0]));
@@ -1090,16 +1135,111 @@ function renderCategorias() {
 
 // ── FIJOS ─────────────────────────────────────────────────────────────────────
 function renderFijos() {
-  document.getElementById('fijos-body').innerHTML = FIJOS.map(f => `
+  document.getElementById('fijos-body').innerHTML = fijosData.map((f, i) => `
     <div class="fijo-item">
       <div>
         <div class="fijo-name">${f.nombre}</div>
         <div class="fijo-meta">${f.pago} · ${f.yo==='Si'?'Vos':'Compartido'}</div>
       </div>
-      <div class="fijo-monto">${fmt(f.monto)}</div>
+      <input class="fijo-input" type="number" value="${f.monto}" onchange="updateFijo(${i},this.value)" title="Editá el monto actual">
     </div>`).join('');
-  const total = FIJOS.reduce((s,f) => s+f.monto, 0);
+  actualizarTotalFijos();
+  checkFijosLoaded();
+  renderTarjetaPreview();
+
+  // Restaurar valor cierre
+  const inp = document.getElementById('cierre-day');
+  if (inp) inp.value = cierreTarjeta;
+}
+
+function actualizarTotalFijos() {
+  const total = fijosData.reduce((s,f) => s+f.monto, 0);
   document.getElementById('fijo-total').textContent = fmt(total);
+}
+
+function updateFijo(i, val) {
+  fijosData[i].monto = Number(val) || 0;
+  actualizarTotalFijos();
+  try { localStorage.setItem('gast_fijos', JSON.stringify(fijosData)); } catch(e) {}
+}
+
+function saveCierre(val) {
+  cierreTarjeta = Math.min(31, Math.max(1, parseInt(val) || 15));
+  try { localStorage.setItem('gast_cierre', cierreTarjeta); } catch(e) {}
+  renderTarjetaPreview();
+}
+
+function getTarjetaPeriod() {
+  // Período: desde día (cierre+1) del mes anterior hasta día cierre del mes actual
+  let startM = curMes - 1, startY = curYear;
+  if (startM < 1) { startM = 12; startY--; }
+  const start = new Date(startY, startM - 1, cierreTarjeta + 1);
+  const end   = new Date(curYear, curMes - 1, cierreTarjeta);
+  return { start, end };
+}
+
+function calcTarjetaTotal() {
+  const { start, end } = getTarjetaPeriod();
+  return txns.filter(t => {
+    if (t.tipo !== 'Egreso' || t.pago !== 'Tarjeta') return false;
+    const p = t.fecha.split('/');
+    const d = new Date(Number(p[2]), Number(p[1])-1, Number(p[0]));
+    return d >= start && d <= end;
+  }).reduce((s,t) => s+t.monto, 0);
+}
+
+function renderTarjetaPreview() {
+  const el = document.getElementById('tarjeta-preview');
+  if (!el) return;
+  const { start, end } = getTarjetaPeriod();
+  const total = calcTarjetaTotal();
+  const fmtDate = d => `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+  el.innerHTML = `
+    <div class="tarjeta-card">
+      <div class="tarjeta-ttl">Total a pagar este resumen</div>
+      <div class="tarjeta-monto">${fmt(total)}</div>
+      <div class="tarjeta-periodo">Período ${fmtDate(start)} → ${fmtDate(end)}</div>
+    </div>`;
+}
+
+function checkFijosLoaded() {
+  const btn = document.getElementById('btn-cargar-fijos');
+  if (!btn) return;
+  const primero = `01/${String(curMes).padStart(2,'0')}/${curYear}`;
+  const cargados = fijosData.filter(f =>
+    txns.some(t => t.fecha === primero && t.cat === 'Fijo' && t.motivo === f.nombre)
+  ).length;
+  const todos = fijosData.length;
+  if (cargados === todos) {
+    btn.textContent = `✓ Fijos de ${MES_NOM[curMes-1]} ya cargados`;
+    btn.classList.add('loaded'); btn.disabled = true;
+  } else {
+    btn.textContent = `Cargar fijos — ${MES_NOM[curMes-1]} ${curYear}`;
+    btn.classList.remove('loaded'); btn.disabled = false;
+  }
+}
+
+async function cargarFijos() {
+  const primero = `01/${String(curMes).padStart(2,'0')}/${curYear}`;
+  const newTxns = fijosData
+    .filter(f => !txns.some(t => t.fecha === primero && t.cat === 'Fijo' && t.motivo === f.nombre))
+    .map(f => ({
+      id: getNextId(), fecha: primero, año: curYear, mes: curMes,
+      tipo: 'Egreso', cat: 'Fijo', motivo: f.nombre,
+      monto: f.monto, pago: f.pago, yo: f.yo, obs: ''
+    }));
+
+  if (!newTxns.length) { notify('Fijos ya cargados este mes', 'warn'); return; }
+
+  txns = [...txns, ...newTxns];
+  saveLocal();
+  renderActive();
+  notify(`${newTxns.length} fijos cargados ✓`, 'ok');
+
+  if (scriptConfigured) {
+    const ok = await postToSheet(newTxns);
+    if (!ok) notify('Guardados local (Sheet sin conexión)', 'warn');
+  }
 }
 
 // ── FORM ──────────────────────────────────────────────────────────────────────
