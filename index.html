@@ -247,6 +247,28 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .tarjeta-day-inp{width:60px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r3);padding:6px 8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--t1);text-align:center;outline:none;transition:.15s}
 .tarjeta-day-inp:focus{border-color:var(--acc)}
 
+/* GATE (login screen) */
+#gate{position:fixed;inset:0;z-index:9999;background:#0c0c0c;display:flex;align-items:center;justify-content:center;transition:opacity .5s,transform .5s}
+#gate.unlock{opacity:0;pointer-events:none;transform:scale(1.04)}
+.gate-card{display:flex;flex-direction:column;align-items:center;gap:28px}
+.gate-logo{font-size:48px;font-weight:700;letter-spacing:-2.5px;color:#fff;font-family:var(--font)}
+.gate-logo em{color:rgba(255,255,255,.25);font-style:normal}
+.gate-hint{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:2px;text-transform:uppercase;font-family:var(--mono)}
+.gate-dots{display:flex;gap:12px}
+.gate-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);transition:.2s}
+.gate-dot.filled{background:#fff}
+.gate-inp-hidden{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
+.gate-keypad{display:grid;grid-template-columns:repeat(3,56px);gap:8px}
+.gate-key{width:56px;height:56px;border-radius:50%;border:1.5px solid rgba(255,255,255,.15);background:transparent;color:#fff;font-size:18px;font-family:var(--mono);font-weight:500;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.gate-key:hover,.gate-key:active{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.4)}
+.gate-key.del{font-size:14px;opacity:.6}
+.gate-err{font-size:11px;color:#f87171;height:14px;letter-spacing:.5px;font-family:var(--mono)}
+
+/* CHART Y-AXIS */
+.chart-area{display:flex;align-items:stretch;gap:4px}
+.chart-yaxis{width:42px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;height:80px}
+.chart-yaxis-lbl{font-family:var(--mono);font-size:8px;color:var(--t3);text-align:right;white-space:nowrap;line-height:1}
+
 /* BOTTOM NAV (mobile only) */
 .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--s1);border-top:1px solid var(--b1);z-index:100;box-shadow:0 -2px 16px rgba(0,0,0,.07)}
 .bottom-nav-inner{display:flex;height:100%}
@@ -344,8 +366,13 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
       <div class="card">
         <div class="card-ttl">Evolución de egresos — 8 meses</div>
         <div class="spark-wrap">
-          <div class="spark-months" id="spark-bars"></div>
-          <div class="spark-lbls" id="spark-lbls"></div>
+          <div class="chart-area">
+            <div class="chart-yaxis" id="spark-yaxis"></div>
+            <div style="flex:1;min-width:0">
+              <div class="spark-months" id="spark-bars"></div>
+              <div class="spark-lbls" id="spark-lbls"></div>
+            </div>
+          </div>
           <div class="spark-legend" id="spark-legend"></div>
         </div>
       </div>
@@ -510,6 +537,30 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
       <button class="btn-save" id="btn-guardar" onclick="guardar()">Guardar</button>
       <button class="btn-cancel" onclick="cerrarForm()">Cancelar</button>
     </div>
+  </div>
+</div>
+
+<!-- GATE (login) -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-logo">gastos<em>.</em></div>
+    <div class="gate-hint">Ingresá tu código</div>
+    <div class="gate-dots" id="gate-dots"></div>
+    <div class="gate-keypad" id="gate-keypad">
+      <button class="gate-key" onclick="gateKey('1')">1</button>
+      <button class="gate-key" onclick="gateKey('2')">2</button>
+      <button class="gate-key" onclick="gateKey('3')">3</button>
+      <button class="gate-key" onclick="gateKey('4')">4</button>
+      <button class="gate-key" onclick="gateKey('5')">5</button>
+      <button class="gate-key" onclick="gateKey('6')">6</button>
+      <button class="gate-key" onclick="gateKey('7')">7</button>
+      <button class="gate-key" onclick="gateKey('8')">8</button>
+      <button class="gate-key" onclick="gateKey('9')">9</button>
+      <button class="gate-key gate-del" onclick="gateDel()">⌫</button>
+      <button class="gate-key" onclick="gateKey('0')">0</button>
+      <button class="gate-key" onclick="gateCheck()" style="background:rgba(37,99,235,.4);border-color:#2563eb">✓</button>
+    </div>
+    <div class="gate-err" id="gate-err"></div>
   </div>
 </div>
 
@@ -826,17 +877,46 @@ function saveLocal() {
   try { localStorage.setItem('gast_extra', JSON.stringify(extra)); } catch(e) {}
 }
 
+// ── FECHA HELPERS ─────────────────────────────────────────────────────────────
+// Parsea cualquier formato de fecha y devuelve {d, m, y} o null
+function parseFecha(fechaStr) {
+  if (!fechaStr) return null;
+  const s = String(fechaStr).trim();
+  // DD/MM/YYYY (formato nativo de la app)
+  const p = s.split('/');
+  if (p.length === 3) {
+    const d = parseInt(p[0]), m = parseInt(p[1]), y = parseInt(p[2]);
+    if (d > 0 && m > 0 && y > 2000) return { d, m, y };
+  }
+  // ISO "2026-05-10" o Date.toString() "Sun May 10 2026 04:00:00 GMT..."
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) return { d: dt.getDate(), m: dt.getMonth()+1, y: dt.getFullYear() };
+  return null;
+}
+// Muestra la fecha siempre como DD/MM/YYYY
+function fmtFecha(fechaStr) {
+  const parts = String(fechaStr || '').split('/');
+  if (parts.length === 3 && parts[2].length === 4) return fechaStr; // ya está bien
+  const p = parseFecha(fechaStr);
+  if (!p) return fechaStr;
+  return String(p.d).padStart(2,'0') + '/' + String(p.m).padStart(2,'0') + '/' + p.y;
+}
+// Convierte fecha a Date para comparaciones de sort
+function toDate(fechaStr) {
+  const p = parseFecha(fechaStr);
+  return p ? new Date(p.y, p.m-1, p.d) : new Date(0);
+}
+
 // ── TARJETA BILLING ───────────────────────────────────────────────────────────
 // Dado un gasto en tarjeta con fecha fechaStr y día de cierre cierre,
 // devuelve el mes en que se PAGA ese gasto.
 // Regla: día <= cierre → va al resumen de ese mes → se paga el mes siguiente
 //        día >  cierre → va al resumen del mes siguiente → se paga en 2 meses
 function calcBillingMonth(fechaStr, cierre) {
-  const p = fechaStr.split('/');
-  if (p.length < 3) return null;
-  const day = parseInt(p[0]), mes1 = parseInt(p[1]), año = parseInt(p[2]);
-  const add = day <= cierre ? 1 : 2;
-  let bm = mes1 + add, by = año;
+  const p = parseFecha(fechaStr);
+  if (!p) return null;
+  const add = p.d <= cierre ? 1 : 2;
+  let bm = p.m + add, by = p.y;
   if (bm > 12) { bm -= 12; by++; }
   if (bm > 12) { bm -= 12; by++; }
   return { mes: bm, año: by };
@@ -1086,6 +1166,13 @@ function renderDash() {
     spark.push({ lbl: MES_COD[m-1], yo, noYo, val: yo+noYo, cur: i===0 });
   }
   const maxS = Math.max(...spark.map(s => s.val), 1);
+
+  // Eje Y del sparkline
+  document.getElementById('spark-yaxis').innerHTML =
+    [maxS, maxS/2, 0].map(v =>
+      `<div class="chart-yaxis-lbl">${v > 0 ? fmtShort(Math.round(v)) : '$0'}</div>`
+    ).join('');
+
   document.getElementById('spark-bars').innerHTML = spark.map(s => {
     const h     = Math.max(6, Math.round(s.val / maxS * 76));
     const hYo   = s.val > 0 ? Math.round(s.yo  / s.val * h) : 0;
@@ -1104,15 +1191,14 @@ function renderDash() {
 
   // Recientes
   const rec = [...egrs,...ings].sort((a,b) => {
-    const pa = a.fecha.split('/'); const pb = b.fecha.split('/');
-    return new Date(pb[2],pb[1]-1,pb[0]) - new Date(pa[2],pa[1]-1,pa[0]);
+    return toDate(b.fecha) - toDate(a.fecha);
   }).slice(0, 10);
   document.getElementById('recent-txns').innerHTML = rec.length
     ? `<table class="txn-tbl"><thead><tr>
         <th>Fecha</th><th>Cat.</th><th>Motivo</th><th class="col-tipo">Pago</th><th style="text-align:right">Monto</th>
       </tr></thead><tbody>` +
       rec.map(t => `<tr>
-        <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${t.fecha.slice(0,5)}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${fmtFecha(t.fecha).slice(0,5)}</td>
         <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.motivo||'—'} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</td>
         <td class="col-tipo"><span class="pago-txt">${t.pago||''}</span></td>
@@ -1137,8 +1223,7 @@ function renderHistorial() {
     if (search && !t.motivo.toLowerCase().includes(search) && !t.cat.toLowerCase().includes(search)) return false;
     return true;
   }).sort((a,b) => {
-    const pa = a.fecha.split('/'); const pb = b.fecha.split('/');
-    return new Date(pb[2],pb[1]-1,pb[0]) - new Date(pa[2],pa[1]-1,pa[0]);
+    return toDate(b.fecha) - toDate(a.fecha);
   });
 
   document.getElementById('hist-count').textContent = rows.length + ' filas';
@@ -1147,7 +1232,7 @@ function renderHistorial() {
         <th>Fecha</th><th class="col-tipo">Tipo</th><th>Cat.</th><th>Motivo</th><th>Pago</th><th class="col-obs">Obs.</th><th style="text-align:right">Monto</th>
       </tr></thead><tbody>` +
       rows.map(t => `<tr>
-        <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${t.fecha}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${fmtFecha(t.fecha)}</td>
         <td class="col-tipo"><span class="${t.tipo==='Ingreso'?'tipo-ing':'tipo-egr'}">${t.tipo}</span></td>
         <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
         <td>${t.motivo||'—'} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</td>
@@ -1332,8 +1417,15 @@ function renderTarjetaPreview() {
       <div class="tarjeta-periodo">Gastos tarjeta cerrados antes del día ${cierreTarjeta} · próximo vencimiento</div>
     </div>
     <div class="tarchart-wrap">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:600;margin-bottom:2px">Proyección tarjeta — 12 meses</div>
-      <div class="tarchart-bars">${bars}</div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:600;margin-bottom:6px">Proyección tarjeta — 12 meses</div>
+      <div class="chart-area">
+        <div class="chart-yaxis">
+          <div class="chart-yaxis-lbl">${fmtShort(maxM)}</div>
+          <div class="chart-yaxis-lbl">${fmtShort(Math.round(maxM/2))}</div>
+          <div class="chart-yaxis-lbl">$0</div>
+        </div>
+        <div class="tarchart-bars" style="flex:1">${bars}</div>
+      </div>
     </div>
     ${upcoming.length ? `<div class="tarjeta-schedule" style="margin-top:14px">${scheduleRows}</div>` : ''}`;
 }
@@ -1494,6 +1586,61 @@ function notify(msg, type='') {
   el.className = 'notify show' + (type ? ' '+type : '');
   setTimeout(() => el.className = 'notify', 2500);
 }
+
+// ── GATE (login) ──────────────────────────────────────────────────────────────
+const GATE_CODE = '09112202';
+let gateBuffer = '';
+
+function gateRenderDots() {
+  const dots = document.getElementById('gate-dots');
+  if (!dots) return;
+  dots.innerHTML = Array.from({ length: GATE_CODE.length }, (_, i) =>
+    `<div class="gate-dot ${i < gateBuffer.length ? 'filled' : ''}"></div>`
+  ).join('');
+}
+
+function gateKey(k) {
+  if (gateBuffer.length >= GATE_CODE.length) return;
+  gateBuffer += k;
+  gateRenderDots();
+  if (gateBuffer.length === GATE_CODE.length) gateCheck();
+}
+
+function gateDel() {
+  gateBuffer = gateBuffer.slice(0, -1);
+  gateRenderDots();
+}
+
+function gateCheck() {
+  if (gateBuffer === GATE_CODE) {
+    sessionStorage.setItem('gast_auth', '1');
+    const gate = document.getElementById('gate');
+    gate.classList.add('unlock');
+    setTimeout(() => { gate.style.display = 'none'; }, 500);
+  } else {
+    document.getElementById('gate-err').textContent = 'Código incorrecto';
+    gateBuffer = '';
+    gateRenderDots();
+    setTimeout(() => { document.getElementById('gate-err').textContent = ''; }, 1600);
+  }
+}
+
+// Inicializar gate
+(function initGate() {
+  const gate = document.getElementById('gate');
+  if (sessionStorage.getItem('gast_auth') === '1') {
+    gate.style.display = 'none';
+  } else {
+    gateRenderDots();
+    // También permitir teclado físico
+    document.addEventListener('keydown', e => {
+      if (!gate || gate.style.display === 'none') return;
+      if (e.key >= '0' && e.key <= '9') { e.preventDefault(); gateKey(e.key); }
+      if (e.key === 'Backspace') { e.preventDefault(); gateDel(); }
+      if (e.key === 'Enter') { e.preventDefault(); gateCheck(); }
+    }, { capture: true });
+  }
+})();
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.getElementById('mes-title').textContent  = mesLabel(curYear, curMes);
