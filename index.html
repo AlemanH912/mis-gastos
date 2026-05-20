@@ -247,6 +247,18 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .tarjeta-day-inp{width:60px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r3);padding:6px 8px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--t1);text-align:center;outline:none;transition:.15s}
 .tarjeta-day-inp:focus{border-color:var(--acc)}
 
+/* BOTTOM NAV (mobile only) */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--s1);border-top:1px solid var(--b1);z-index:100;box-shadow:0 -2px 16px rgba(0,0,0,.07)}
+.bottom-nav-inner{display:flex;height:100%}
+.bnav-btn{flex:1;border:none;background:transparent;color:var(--t3);font-family:var(--font);font-size:10px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;transition:.15s;padding:4px 2px;-webkit-tap-highlight-color:transparent}
+.bnav-btn.on{color:var(--acc)}
+.bnav-btn.on .bnav-label{font-weight:700}
+.bnav-icon{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bnav-label{font-size:9.5px;letter-spacing:.2px}
+
+/* TABLE SCROLL WRAPPER */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
 @media(max-width:768px){
   .metrics{grid-template-columns:repeat(3,1fr)}
   .dash-row{grid-template-columns:1fr}
@@ -254,21 +266,31 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
   .donut-wrap{flex-direction:column;align-items:flex-start}
 }
 @media(max-width:600px){
-  .topbar{padding:0 12px;height:auto;flex-wrap:wrap;gap:6px;padding-top:8px;padding-bottom:8px}
-  .logo{flex:1}
-  .nav{order:3;width:100%;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .nav::-webkit-scrollbar{display:none}
-  .nav-btn{flex-shrink:0;font-size:12px;padding:6px 10px}
+  body{padding-bottom:62px}
+  .bottom-nav{display:block}
+  .topbar{padding:0 14px;height:48px;gap:8px}
+  .nav{display:none}
+  .sync-btn{margin-left:auto}
   .sync-btn .sync-txt-label{display:none}
-  .main{padding:12px}
+  .main{padding:10px}
   .card{padding:14px}
   .metrics{grid-template-columns:1fr 1fr;gap:8px}
-  .metric{padding:12px 14px}
-  .metric-val{font-size:18px}
+  .metric{padding:11px 12px}
+  .metric-val{font-size:17px}
+  .metric-lbl{font-size:9px}
+  .form-box{padding:20px 16px}
   .form-grid{grid-template-columns:1fr}
   .fg.full{grid-column:1}
-  .mes-title{font-size:18px}
+  .mes-title{font-size:17px}
   .tarjeta-monto{font-size:22px}
+  .bar-lbl{width:85px;font-size:11px}
+  .bar-val{width:60px;font-size:11px}
+  /* hide less-important table cols on mobile */
+  .col-obs,.col-tipo{display:none}
+  /* compact table cells */
+  .txn-tbl th,.txn-tbl td{padding:7px 7px}
+  .cat-pill{font-size:10px;padding:2px 6px}
+  .tarchart-lbl{font-size:7px}
 }
 </style>
 </head>
@@ -324,6 +346,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
         <div class="spark-wrap">
           <div class="spark-months" id="spark-bars"></div>
           <div class="spark-lbls" id="spark-lbls"></div>
+          <div class="spark-legend" id="spark-legend"></div>
         </div>
       </div>
     </div>
@@ -333,7 +356,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
     </div>
     <div class="card">
       <div class="card-ttl">Últimas transacciones</div>
-      <div id="recent-txns"></div>
+      <div class="tbl-scroll" id="recent-txns"></div>
     </div>
   </div>
 
@@ -369,7 +392,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
         <span class="count-badge" id="hist-count">0 filas</span>
         <button class="sync-btn" onclick="exportCSV()">↓ CSV</button>
       </div>
-      <div id="hist-body"></div>
+      <div class="tbl-scroll" id="hist-body"></div>
     </div>
   </div>
 
@@ -377,7 +400,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
   <div class="tab-pane" id="tab-resumen">
     <div class="card">
       <div class="card-ttl">Resumen mensual — todos los períodos</div>
-      <div id="res-body"></div>
+      <div class="tbl-scroll" id="res-body"></div>
     </div>
   </div>
 
@@ -489,6 +512,32 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
     </div>
   </div>
 </div>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-btn on" onclick="goTab('dashboard')">
+      <svg class="bnav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="bnav-label">Dashboard</span>
+    </button>
+    <button class="bnav-btn" onclick="goTab('historial')">
+      <svg class="bnav-icon" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      <span class="bnav-label">Historial</span>
+    </button>
+    <button class="bnav-btn" onclick="goTab('resumen')">
+      <svg class="bnav-icon" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-8"/></svg>
+      <span class="bnav-label">Resumen</span>
+    </button>
+    <button class="bnav-btn" onclick="goTab('categorias')">
+      <svg class="bnav-icon" viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z" opacity=".4"/><path d="M5 7h4M15 7h4M5 17h4M15 17h4"/></svg>
+      <span class="bnav-label">Categ.</span>
+    </button>
+    <button class="bnav-btn" onclick="goTab('fijos')">
+      <svg class="bnav-icon" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span class="bnav-label">Fijos</span>
+    </button>
+  </div>
+</nav>
 
 <div class="notify" id="notify"></div>
 
@@ -890,8 +939,12 @@ async function postToSheet(newTxns) {
 function goTab(tab) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('on'));
   document.getElementById('tab-' + tab).classList.add('on');
-  document.querySelector(`.nav-btn[onclick="goTab('${tab}')"]`).classList.add('on');
+  const topBtn = document.querySelector(`.nav-btn[onclick="goTab('${tab}')"]`);
+  if (topBtn) topBtn.classList.add('on');
+  const botBtn = document.querySelector(`.bnav-btn[onclick="goTab('${tab}')"]`);
+  if (botBtn) botBtn.classList.add('on');
   renderActive();
 }
 
@@ -996,13 +1049,14 @@ function renderDash() {
   document.getElementById('m-fijo').textContent = fmt(fijos);
   document.getElementById('m-fijo-pct').textContent = pctFijo + '% del egreso';
 
-  // Tarjeta a pagar este mes (vencimientos billing = curMes)
+  // Tarjeta: muestra vencimiento del mes actual; si es $0 muestra el próximo mes con saldo
   const tarjSched = getTarjetaSchedule();
-  const tarjEntry = tarjSched.find(s => s.año === curYear && s.mes === curMes);
-  document.getElementById('m-tarjeta').textContent = tarjEntry ? fmt(tarjEntry.monto) : '$0';
-  document.getElementById('m-tarjeta-sub').textContent = tarjEntry
-    ? `${tarjEntry.items.length} cargo${tarjEntry.items.length!==1?'s':''} tarjeta`
-    : 'sin vencimientos';
+  const tarjCur   = tarjSched.find(s => s.año === curYear && s.mes === curMes);
+  const tarjNext  = tarjCur || tarjSched.find(s => s.año*100+s.mes >= curYear*100+curMes);
+  document.getElementById('m-tarjeta').textContent = tarjNext ? fmt(tarjNext.monto) : '$0';
+  document.getElementById('m-tarjeta-sub').textContent = tarjNext
+    ? (tarjNext === tarjCur ? 'vence este mes' : `vence ${MES_COD[tarjNext.mes-1]} ${String(tarjNext.año).slice(2)}`)
+    : 'sin cargos pendientes';
 
   // Donut Fijos/Variables
   document.getElementById('chart-fijo-var').innerHTML = renderDonut(fijos, variables, totalEgr);
@@ -1044,11 +1098,9 @@ function renderDash() {
   document.getElementById('spark-lbls').innerHTML = spark.map(s =>
     `<div class="spark-lbl" style="color:${s.cur?'var(--acc)':'var(--t3)'}">${s.lbl}</div>`
   ).join('');
-  document.getElementById('spark-bars').insertAdjacentHTML('afterend',
-    `<div class="spark-legend">
-      <div class="spark-legend-item"><div class="spark-legend-dot" style="background:var(--acc)"></div>Míos</div>
-      <div class="spark-legend-item"><div class="spark-legend-dot" style="background:#f97316"></div>Compartidos</div>
-    </div>`);
+  document.getElementById('spark-legend').innerHTML =
+    `<div class="spark-legend-item"><div class="spark-legend-dot" style="background:#1e40af"></div>Míos</div>
+     <div class="spark-legend-item"><div class="spark-legend-dot" style="background:#93c5fd"></div>Compartidos</div>`;
 
   // Recientes
   const rec = [...egrs,...ings].sort((a,b) => {
@@ -1057,13 +1109,13 @@ function renderDash() {
   }).slice(0, 10);
   document.getElementById('recent-txns').innerHTML = rec.length
     ? `<table class="txn-tbl"><thead><tr>
-        <th>Fecha</th><th>Cat.</th><th>Motivo</th><th>Pago</th><th style="text-align:right">Monto</th>
+        <th>Fecha</th><th>Cat.</th><th>Motivo</th><th class="col-tipo">Pago</th><th style="text-align:right">Monto</th>
       </tr></thead><tbody>` +
       rec.map(t => `<tr>
         <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${t.fecha.slice(0,5)}</td>
         <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.motivo||'—'}</td>
-        <td><span class="pago-txt">${t.pago||''} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.motivo||'—'} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</td>
+        <td class="col-tipo"><span class="pago-txt">${t.pago||''}</span></td>
         <td class="${t.tipo==='Ingreso'?'monto-ing':'monto-egr'}">${t.tipo==='Ingreso'?'+':''}${fmt(t.monto)}</td>
       </tr>`).join('') + `</tbody></table>`
     : '<div class="empty">Sin movimientos este mes</div>';
@@ -1092,15 +1144,15 @@ function renderHistorial() {
   document.getElementById('hist-count').textContent = rows.length + ' filas';
   document.getElementById('hist-body').innerHTML = rows.length
     ? `<table class="txn-tbl"><thead><tr>
-        <th>Fecha</th><th>Tipo</th><th>Cat.</th><th>Motivo</th><th>Pago</th><th>Obs.</th><th style="text-align:right">Monto</th>
+        <th>Fecha</th><th class="col-tipo">Tipo</th><th>Cat.</th><th>Motivo</th><th>Pago</th><th class="col-obs">Obs.</th><th style="text-align:right">Monto</th>
       </tr></thead><tbody>` +
       rows.map(t => `<tr>
         <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${t.fecha}</td>
-        <td><span class="${t.tipo==='Ingreso'?'tipo-ing':'tipo-egr'}">${t.tipo}</span></td>
+        <td class="col-tipo"><span class="${t.tipo==='Ingreso'?'tipo-ing':'tipo-egr'}">${t.tipo}</span></td>
         <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
         <td>${t.motivo||'—'} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</td>
         <td><span class="pago-txt">${t.pago||''}</span></td>
-        <td style="font-size:11px;color:var(--t3)">${t.obs||''}</td>
+        <td class="col-obs" style="font-size:11px;color:var(--t3)">${t.obs||''}</td>
         <td class="${t.tipo==='Ingreso'?'monto-ing':'monto-egr'}">${t.tipo==='Ingreso'?'+':''}${fmt(t.monto)}</td>
       </tr>`).join('') + `</tbody></table>`
     : '<div class="empty">Sin resultados</div>';
@@ -1269,11 +1321,15 @@ function renderTarjetaPreview() {
     </div>`
   ).join('');
 
+  // Próximo mes con vencimiento
+  const nextWithData = months.find(m => m.monto > 0);
+  const showEntry = curEntry || nextWithData;
+
   el.innerHTML = `
     <div class="tarjeta-card">
-      <div class="tarjeta-ttl">A pagar en ${MES_NOM[curMes-1]} ${curYear}</div>
-      <div class="tarjeta-monto">${fmt(curAmount)}</div>
-      <div class="tarjeta-periodo">Gastos con tarjeta (vos) antes del cierre del día ${cierreTarjeta}</div>
+      <div class="tarjeta-ttl">Tarjeta — vence en ${MES_NOM[(showEntry?showEntry.mes:curMes)-1]} ${showEntry?showEntry.año:curYear}</div>
+      <div class="tarjeta-monto">${fmt(showEntry ? showEntry.monto : 0)}</div>
+      <div class="tarjeta-periodo">Gastos tarjeta cerrados antes del día ${cierreTarjeta} · próximo vencimiento</div>
     </div>
     <div class="tarchart-wrap">
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:600;margin-bottom:2px">Proyección tarjeta — 12 meses</div>
