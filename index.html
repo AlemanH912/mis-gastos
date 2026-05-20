@@ -48,7 +48,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .mes-code{font-family:var(--mono);font-size:11px;color:var(--t3);background:var(--s3);border-radius:var(--r3);padding:3px 8px;margin-left:8px}
 
 /* METRICS */
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
 .metric{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px 18px;transition:.2s;box-shadow:var(--shadow)}
 .metric:hover{border-color:var(--b2);transform:translateY(-1px)}
 .metric-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:7px;font-weight:600}
@@ -222,6 +222,21 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .btn-cargar-fijos:disabled{opacity:.5;cursor:not-allowed}
 .btn-cargar-fijos.loaded{background:var(--green)}
 
+/* TARJETA CHART */
+.tarchart-wrap{margin-top:14px}
+.tarchart-bars{display:flex;gap:4px;align-items:flex-end;height:80px;margin:8px 0 0}
+.tarchart-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-width:0}
+.tarchart-bar{width:100%;border-radius:3px 3px 0 0;background:#1e40af;cursor:default;position:relative;transition:.3s}
+.tarchart-bar.past{background:#bfdbfe}
+.tarchart-bar.cur{background:#1e3a8a}
+.tarchart-bar:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--t1);color:#fff;font-size:11px;padding:4px 8px;border-radius:4px;white-space:nowrap;font-family:var(--mono);pointer-events:none;z-index:20}
+.tarchart-lbl{font-size:8px;color:var(--t3);font-family:var(--mono);text-align:center}
+.tarjeta-schedule{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.tarjeta-schedule-row{display:flex;align-items:center;gap:10px}
+.tarjeta-schedule-mes{font-size:11px;font-family:var(--mono);color:var(--t2);width:60px;flex-shrink:0}
+.tarjeta-schedule-bar{flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
+.tarjeta-schedule-fill{height:100%;border-radius:3px;background:#1e40af}
+.tarjeta-schedule-val{font-size:11px;font-family:var(--mono);font-weight:700;color:var(--t1);width:80px;text-align:right;flex-shrink:0}
 /* TARJETA CARD */
 .tarjeta-card{background:linear-gradient(135deg,#1e40af,#3b82f6);border-radius:var(--r);padding:18px 20px;color:#fff;margin-bottom:14px}
 .tarjeta-ttl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;opacity:.7;font-weight:600;margin-bottom:6px}
@@ -233,7 +248,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .tarjeta-day-inp:focus{border-color:var(--acc)}
 
 @media(max-width:768px){
-  .metrics{grid-template-columns:1fr 1fr}
+  .metrics{grid-template-columns:repeat(3,1fr)}
   .dash-row{grid-template-columns:1fr}
   .fijo-grid{grid-template-columns:1fr}
   .donut-wrap{flex-direction:column;align-items:flex-start}
@@ -297,6 +312,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
       <div class="metric"><div class="metric-lbl">Egresos</div><div class="metric-val c-egr" id="m-egr">$0</div><div class="metric-sub" id="m-egr-n">0 movimientos</div></div>
       <div class="metric"><div class="metric-lbl">Balance</div><div class="metric-val" id="m-bal">$0</div><div class="metric-sub">ingresos − egresos</div></div>
       <div class="metric"><div class="metric-lbl">Gastos fijos</div><div class="metric-val c-fijo" id="m-fijo">$0</div><div class="metric-sub" id="m-fijo-pct">0% del egreso</div></div>
+      <div class="metric"><div class="metric-lbl">Tarjeta a pagar</div><div class="metric-val" id="m-tarjeta" style="color:var(--purple)">$0</div><div class="metric-sub" id="m-tarjeta-sub">este mes</div></div>
     </div>
     <div class="dash-row">
       <div class="card">
@@ -761,6 +777,37 @@ function saveLocal() {
   try { localStorage.setItem('gast_extra', JSON.stringify(extra)); } catch(e) {}
 }
 
+// ── TARJETA BILLING ───────────────────────────────────────────────────────────
+// Dado un gasto en tarjeta con fecha fechaStr y día de cierre cierre,
+// devuelve el mes en que se PAGA ese gasto.
+// Regla: día <= cierre → va al resumen de ese mes → se paga el mes siguiente
+//        día >  cierre → va al resumen del mes siguiente → se paga en 2 meses
+function calcBillingMonth(fechaStr, cierre) {
+  const p = fechaStr.split('/');
+  if (p.length < 3) return null;
+  const day = parseInt(p[0]), mes1 = parseInt(p[1]), año = parseInt(p[2]);
+  const add = day <= cierre ? 1 : 2;
+  let bm = mes1 + add, by = año;
+  if (bm > 12) { bm -= 12; by++; }
+  if (bm > 12) { bm -= 12; by++; }
+  return { mes: bm, año: by };
+}
+
+// Devuelve un mapa {key: {año, mes, monto, items[]}} de todos los vencimientos de tarjeta
+function getTarjetaSchedule() {
+  const map = {};
+  txns.forEach(t => {
+    if (t.tipo !== 'Egreso' || t.pago !== 'Tarjeta' || t.yo !== 'Si') return;
+    const bm = calcBillingMonth(t.fecha, cierreTarjeta);
+    if (!bm) return;
+    const key = bm.año * 100 + bm.mes;
+    if (!map[key]) map[key] = { año: bm.año, mes: bm.mes, monto: 0, items: [] };
+    map[key].monto += t.monto;
+    map[key].items.push(t);
+  });
+  return Object.values(map).sort((a,b) => (a.año*100+a.mes)-(b.año*100+b.mes));
+}
+
 function setSyncStatus(txt, ok) {
   const dot = document.getElementById('sdot');
   const span = document.getElementById('sync-txt');
@@ -948,6 +995,14 @@ function renderDash() {
   balEl.className = 'metric-val ' + (bal >= 0 ? 'c-ing' : 'c-egr');
   document.getElementById('m-fijo').textContent = fmt(fijos);
   document.getElementById('m-fijo-pct').textContent = pctFijo + '% del egreso';
+
+  // Tarjeta a pagar este mes (vencimientos billing = curMes)
+  const tarjSched = getTarjetaSchedule();
+  const tarjEntry = tarjSched.find(s => s.año === curYear && s.mes === curMes);
+  document.getElementById('m-tarjeta').textContent = tarjEntry ? fmt(tarjEntry.monto) : '$0';
+  document.getElementById('m-tarjeta-sub').textContent = tarjEntry
+    ? `${tarjEntry.items.length} cargo${tarjEntry.items.length!==1?'s':''} tarjeta`
+    : 'sin vencimientos';
 
   // Donut Fijos/Variables
   document.getElementById('chart-fijo-var').innerHTML = renderDonut(fijos, variables, totalEgr);
@@ -1169,37 +1224,63 @@ function saveCierre(val) {
   renderTarjetaPreview();
 }
 
-function getTarjetaPeriod() {
-  // Período: desde día (cierre+1) del mes anterior hasta día cierre del mes actual
-  let startM = curMes - 1, startY = curYear;
-  if (startM < 1) { startM = 12; startY--; }
-  const start = new Date(startY, startM - 1, cierreTarjeta + 1);
-  const end   = new Date(curYear, curMes - 1, cierreTarjeta);
-  return { start, end };
-}
-
-function calcTarjetaTotal() {
-  const { start, end } = getTarjetaPeriod();
-  return txns.filter(t => {
-    if (t.tipo !== 'Egreso' || t.pago !== 'Tarjeta') return false;
-    const p = t.fecha.split('/');
-    const d = new Date(Number(p[2]), Number(p[1])-1, Number(p[0]));
-    return d >= start && d <= end;
-  }).reduce((s,t) => s+t.monto, 0);
-}
-
 function renderTarjetaPreview() {
   const el = document.getElementById('tarjeta-preview');
   if (!el) return;
-  const { start, end } = getTarjetaPeriod();
-  const total = calcTarjetaTotal();
-  const fmtDate = d => `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+
+  const schedule = getTarjetaSchedule();
+
+  // Monto que vence en el mes actualmente visualizado
+  const curEntry = schedule.find(s => s.año === curYear && s.mes === curMes);
+  const curAmount = curEntry ? curEntry.monto : 0;
+
+  // Gráfico de próximos 12 meses desde hoy
+  const today = new Date();
+  const todayKey = today.getFullYear() * 100 + (today.getMonth() + 1);
+  const curKey   = curYear * 100 + curMes;
+
+  const months = [];
+  for (let i = 0; i < 12; i++) {
+    let m = today.getMonth() + 1 + i, y = today.getFullYear();
+    if (m > 12) { m -= 12; y++; }
+    const entry = schedule.find(s => s.año === y && s.mes === m);
+    months.push({ año: y, mes: m, monto: entry ? entry.monto : 0 });
+  }
+  const maxM = Math.max(...months.map(m => m.monto), 1);
+
+  const bars = months.map(m => {
+    const h   = m.monto > 0 ? Math.max(4, Math.round(m.monto / maxM * 68)) : 0;
+    const key = m.año * 100 + m.mes;
+    const cls = key < todayKey ? 'past' : key === todayKey ? 'cur' : '';
+    const tip = `${MES_NOM[m.mes-1]} ${m.año}: ${m.monto > 0 ? fmt(m.monto) : 'sin cargos'}`;
+    return `<div class="tarchart-col">
+      <div class="tarchart-bar ${cls}" style="height:${h}px" data-tip="${tip}"></div>
+      <div class="tarchart-lbl">${MES_COD[m.mes-1]}</div>
+    </div>`;
+  }).join('');
+
+  // Lista de los próximos 6 meses con monto
+  const upcoming = months.filter(m => m.monto > 0 && (m.año*100+m.mes) >= todayKey).slice(0, 6);
+  const maxU = Math.max(...upcoming.map(m => m.monto), 1);
+  const scheduleRows = upcoming.map(m =>
+    `<div class="tarjeta-schedule-row">
+      <div class="tarjeta-schedule-mes">${MES_COD[m.mes-1]} ${String(m.año).slice(2)}</div>
+      <div class="tarjeta-schedule-bar"><div class="tarjeta-schedule-fill" style="width:${Math.round(m.monto/maxU*100)}%"></div></div>
+      <div class="tarjeta-schedule-val">${fmt(m.monto)}</div>
+    </div>`
+  ).join('');
+
   el.innerHTML = `
     <div class="tarjeta-card">
-      <div class="tarjeta-ttl">Total a pagar este resumen</div>
-      <div class="tarjeta-monto">${fmt(total)}</div>
-      <div class="tarjeta-periodo">Período ${fmtDate(start)} → ${fmtDate(end)}</div>
-    </div>`;
+      <div class="tarjeta-ttl">A pagar en ${MES_NOM[curMes-1]} ${curYear}</div>
+      <div class="tarjeta-monto">${fmt(curAmount)}</div>
+      <div class="tarjeta-periodo">Gastos con tarjeta (vos) antes del cierre del día ${cierreTarjeta}</div>
+    </div>
+    <div class="tarchart-wrap">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:600;margin-bottom:2px">Proyección tarjeta — 12 meses</div>
+      <div class="tarchart-bars">${bars}</div>
+    </div>
+    ${upcoming.length ? `<div class="tarjeta-schedule" style="margin-top:14px">${scheduleRows}</div>` : ''}`;
 }
 
 function checkFijosLoaded() {
