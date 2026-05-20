@@ -1235,32 +1235,31 @@ function renderTarjetaPreview() {
   const curAmount = curEntry ? curEntry.monto : 0;
 
   // Gráfico de próximos 12 meses desde hoy
-  const today = new Date();
-  const todayKey = today.getFullYear() * 100 + (today.getMonth() + 1);
-  const curKey   = curYear * 100 + curMes;
+  // Usamos curYear/curMes como punto de partida del gráfico (el mes visualizado)
+  const curKey = curYear * 100 + curMes;
 
   const months = [];
   for (let i = 0; i < 12; i++) {
-    let m = today.getMonth() + 1 + i, y = today.getFullYear();
+    let m = curMes + i, y = curYear;
     if (m > 12) { m -= 12; y++; }
     const entry = schedule.find(s => s.año === y && s.mes === m);
     months.push({ año: y, mes: m, monto: entry ? entry.monto : 0 });
   }
   const maxM = Math.max(...months.map(m => m.monto), 1);
 
-  const bars = months.map(m => {
+  const bars = months.map((m, idx) => {
     const h   = m.monto > 0 ? Math.max(4, Math.round(m.monto / maxM * 68)) : 0;
     const key = m.año * 100 + m.mes;
-    const cls = key < todayKey ? 'past' : key === todayKey ? 'cur' : '';
+    const cls = idx === 0 ? 'cur' : '';
     const tip = `${MES_NOM[m.mes-1]} ${m.año}: ${m.monto > 0 ? fmt(m.monto) : 'sin cargos'}`;
     return `<div class="tarchart-col">
       <div class="tarchart-bar ${cls}" style="height:${h}px" data-tip="${tip}"></div>
-      <div class="tarchart-lbl">${MES_COD[m.mes-1]}</div>
+      <div class="tarchart-lbl" style="${idx===0?'color:var(--acc)':''}">${MES_COD[m.mes-1]}</div>
     </div>`;
   }).join('');
 
   // Lista de los próximos 6 meses con monto
-  const upcoming = months.filter(m => m.monto > 0 && (m.año*100+m.mes) >= todayKey).slice(0, 6);
+  const upcoming = months.filter(m => m.monto > 0).slice(0, 6);
   const maxU = Math.max(...upcoming.map(m => m.monto), 1);
   const scheduleRows = upcoming.map(m =>
     `<div class="tarjeta-schedule-row">
