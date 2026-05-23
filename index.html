@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>gastos.</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
@@ -281,6 +281,9 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 /* TABLE SCROLL WRAPPER */
 .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
+/* Prevenir zoom en double-tap en todos los botones e interactivos */
+button,a,.mes-arr,.nav-btn,.bnav-btn,.seg-btn,.flt,.add-btn,.sync-btn{touch-action:manipulation}
+
 @media(max-width:768px){
   .metrics{grid-template-columns:repeat(3,1fr)}
   .dash-row{grid-template-columns:1fr}
@@ -296,10 +299,22 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
   .sync-btn .sync-txt-label{display:none}
   .main{padding:10px}
   .card{padding:14px}
+
+  /* Métricas: 2 columnas, la 5ta card ocupa todo el ancho */
   .metrics{grid-template-columns:1fr 1fr;gap:8px}
+  .metric:nth-child(5){grid-column:1 / -1}
   .metric{padding:11px 12px}
   .metric-val{font-size:17px}
   .metric-lbl{font-size:9px}
+
+  /* Evitar zoom al enfocar inputs (iOS requiere font-size >= 16px) */
+  input,select,textarea{font-size:16px !important}
+  .finp{font-size:16px !important}
+  .fijo-input{font-size:16px !important}
+  .tarjeta-day-inp{font-size:16px !important}
+  .search-inp{font-size:16px !important}
+  .gate-key{font-size:16px}
+
   .form-box{padding:20px 16px}
   .form-grid{grid-template-columns:1fr}
   .fg.full{grid-column:1}
@@ -307,9 +322,8 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
   .tarjeta-monto{font-size:22px}
   .bar-lbl{width:85px;font-size:11px}
   .bar-val{width:60px;font-size:11px}
-  /* hide less-important table cols on mobile */
+  /* ocultar columnas menos importantes en mobile */
   .col-obs,.col-tipo{display:none}
-  /* compact table cells */
   .txn-tbl th,.txn-tbl td{padding:7px 7px}
   .cat-pill{font-size:10px;padding:2px 6px}
   .tarchart-lbl{font-size:7px}
@@ -456,7 +470,7 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
       <div class="card-ttl">Tarjeta de crédito</div>
       <div class="tarjeta-setting">
         <label>Mi tarjeta cierra el día</label>
-        <input class="tarjeta-day-inp" type="number" id="cierre-day" min="1" max="31" value="15" onchange="saveCierre(this.value)">
+        <input class="tarjeta-day-inp" type="number" id="cierre-day" min="1" max="31" value="15" oninput="saveCierre(this.value)" onblur="saveCierre(this.value)">
         <span style="font-size:12px;color:var(--t3)">de cada mes</span>
       </div>
       <div id="tarjeta-preview" style="margin-top:12px"></div>
@@ -827,7 +841,7 @@ const FIJOS_DEFAULT = [
   {nombre:'WiFi',monto:83000,pago:'Tarjeta',yo:'No'},
 ];
 let fijosData = (() => { try { const s=localStorage.getItem('gast_fijos'); return s?JSON.parse(s):FIJOS_DEFAULT.map(f=>({...f})); } catch(e){ return FIJOS_DEFAULT.map(f=>({...f})); } })();
-let cierreTarjeta = parseInt(localStorage.getItem('gast_cierre')||'15');
+let cierreTarjeta = (() => { const v = parseInt(localStorage.getItem('gast_cierre')); return (v >= 1 && v <= 31) ? v : 15; })();
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const SEED_IDS = new Set(TXN_SEED.map(r => r[0]));
@@ -1356,8 +1370,10 @@ function updateFijo(i, val) {
 }
 
 function saveCierre(val) {
-  cierreTarjeta = Math.min(31, Math.max(1, parseInt(val) || 15));
-  try { localStorage.setItem('gast_cierre', cierreTarjeta); } catch(e) {}
+  const n = parseInt(val);
+  if (!n || n < 1 || n > 31) return; // no guardar si el valor es inválido/vacío
+  cierreTarjeta = n;
+  try { localStorage.setItem('gast_cierre', String(n)); } catch(e) {}
   renderTarjetaPreview();
 }
 
