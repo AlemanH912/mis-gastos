@@ -264,6 +264,17 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .gate-key.del{font-size:14px;opacity:.6}
 .gate-err{font-size:11px;color:#f87171;height:14px;letter-spacing:.5px;font-family:var(--mono)}
 
+/* CIERRE GRID */
+.cierre-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.cierre-cell{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r2);padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:.15s}
+.cierre-cell.cur{border-color:var(--acc);background:#eff6ff}
+.cierre-cell-mes{font-size:9.5px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.cierre-cell.cur .cierre-cell-mes{color:var(--acc)}
+.cierre-cell-inp{width:46px;text-align:center;border:none;border-bottom:2px solid var(--b1);background:transparent;font-family:var(--mono);font-size:15px;font-weight:700;color:var(--t1);outline:none;padding:2px 4px;transition:.15s}
+.cierre-cell-inp:focus{border-color:var(--acc)}
+.cierre-cell.cur .cierre-cell-inp{color:var(--acc);border-color:var(--acc)}
+.cierre-cell-sub{font-size:9px;color:var(--t3)}
+
 /* CHART Y-AXIS */
 .chart-yaxis-lbl{font-family:var(--mono);font-size:8px;color:var(--t3);text-align:right;white-space:nowrap;line-height:1}
 
@@ -466,12 +477,9 @@ button,a,.mes-arr,.nav-btn,.bnav-btn,.seg-btn,.flt,.add-btn,.sync-btn{touch-acti
     </div>
     <div class="card">
       <div class="card-ttl">Tarjeta de crédito</div>
-      <div class="tarjeta-setting">
-        <label>Mi tarjeta cierra el día</label>
-        <input class="tarjeta-day-inp" type="number" id="cierre-day" min="1" max="31" value="15" oninput="saveCierre(this.value)" onblur="saveCierre(this.value)">
-        <span style="font-size:12px;color:var(--t3)">de cada mes</span>
-      </div>
-      <div id="tarjeta-preview" style="margin-top:12px"></div>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Día de cierre por mes — editá cada casilla</div>
+      <div class="cierre-grid" id="cierre-grid"></div>
+      <div id="tarjeta-preview" style="margin-top:16px"></div>
     </div>
   </div>
 
@@ -1356,11 +1364,8 @@ function renderFijos() {
     </div>`).join('');
   actualizarTotalFijos();
   checkFijosLoaded();
+  renderCierreGrid();
   renderTarjetaPreview();
-
-  // Mostrar el cierre guardado para este mes
-  const inp = document.getElementById('cierre-day');
-  if (inp) inp.value = getCierre(curYear, curMes);
 }
 
 function actualizarTotalFijos() {
@@ -1378,10 +1383,47 @@ function saveCierre(val) {
   const n = parseInt(val);
   if (!n || n < 1 || n > 31) return;
   try {
-    localStorage.setItem('gast_cierre_' + curYear + '_' + curMes, String(n)); // guarda para este mes
-    localStorage.setItem('gast_cierre', String(n)); // guarda como default para meses sin configurar
+    localStorage.setItem('gast_cierre_' + curYear + '_' + curMes, String(n));
+    localStorage.setItem('gast_cierre', String(n));
   } catch(e) {}
   renderTarjetaPreview();
+}
+
+// Guarda el cierre para un mes específico (desde la grilla)
+function setCierreMonth(y, m, val) {
+  const n = parseInt(val);
+  if (!n || n < 1 || n > 31) return;
+  try {
+    localStorage.setItem('gast_cierre_' + y + '_' + m, String(n));
+    localStorage.setItem('gast_cierre', String(n)); // actualiza default
+  } catch(e) {}
+  renderTarjetaPreview(); // recalcula el gráfico
+}
+
+// Renderiza la grilla de cierres: 6 meses atrás + mes actual + 5 meses adelante
+function renderCierreGrid() {
+  const grid = document.getElementById('cierre-grid');
+  if (!grid) return;
+  const cells = [];
+  for (let i = -5; i <= 6; i++) {
+    let m = curMes + i, y = curYear;
+    if (m < 1)  { m += 12; y--; }
+    if (m > 12) { m -= 12; y++; }
+    const c   = getCierre(y, m);
+    const cur = (m === curMes && y === curYear);
+    // Calcular qué mes se paga con este cierre
+    let pm = m + 1, py = y;
+    if (pm > 12) { pm -= 12; py++; }
+    cells.push(`
+      <div class="cierre-cell${cur ? ' cur' : ''}">
+        <div class="cierre-cell-mes">${MES_COD[m-1]} ${String(y).slice(2)}</div>
+        <input class="cierre-cell-inp" type="number" min="1" max="31" value="${c}"
+          oninput="setCierreMonth(${y},${m},this.value)"
+          onblur="setCierreMonth(${y},${m},this.value)">
+        <div class="cierre-cell-sub">paga en ${MES_COD[pm-1]}</div>
+      </div>`);
+  }
+  grid.innerHTML = cells.join('');
 }
 
 function renderTarjetaPreview() {
