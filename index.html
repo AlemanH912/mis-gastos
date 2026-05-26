@@ -265,8 +265,6 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .gate-err{font-size:11px;color:#f87171;height:14px;letter-spacing:.5px;font-family:var(--mono)}
 
 /* CHART Y-AXIS */
-.chart-area{display:flex;align-items:stretch;gap:4px}
-.chart-yaxis{width:42px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;height:80px}
 .chart-yaxis-lbl{font-family:var(--mono);font-size:8px;color:var(--t3);text-align:right;white-space:nowrap;line-height:1}
 
 /* BOTTOM NAV (mobile only) */
@@ -380,8 +378,8 @@ button,a,.mes-arr,.nav-btn,.bnav-btn,.seg-btn,.flt,.add-btn,.sync-btn{touch-acti
       <div class="card">
         <div class="card-ttl">Evolución de egresos — 8 meses</div>
         <div class="spark-wrap">
-          <div class="chart-area">
-            <div class="chart-yaxis" id="spark-yaxis"></div>
+          <div style="display:flex;gap:6px">
+            <div id="spark-yaxis" style="width:40px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;height:80px;margin-top:8px"></div>
             <div style="flex:1;min-width:0">
               <div class="spark-months" id="spark-bars"></div>
               <div class="spark-lbls" id="spark-lbls"></div>
@@ -841,7 +839,13 @@ const FIJOS_DEFAULT = [
   {nombre:'WiFi',monto:83000,pago:'Tarjeta',yo:'No'},
 ];
 let fijosData = (() => { try { const s=localStorage.getItem('gast_fijos'); return s?JSON.parse(s):FIJOS_DEFAULT.map(f=>({...f})); } catch(e){ return FIJOS_DEFAULT.map(f=>({...f})); } })();
-let cierreTarjeta = (() => { const v = parseInt(localStorage.getItem('gast_cierre')); return (v >= 1 && v <= 31) ? v : 15; })();
+// Cierre de tarjeta — se guarda POR MES (gast_cierre_YYYY_M) con fallback a último usado
+function getCierre(y, m) {
+  const v = parseInt(localStorage.getItem('gast_cierre_' + y + '_' + m));
+  if (v >= 1 && v <= 31) return v;
+  const def = parseInt(localStorage.getItem('gast_cierre'));
+  return (def >= 1 && def <= 31) ? def : 15;
+}
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const SEED_IDS = new Set(TXN_SEED.map(r => r[0]));
@@ -936,12 +940,13 @@ function calcBillingMonth(fechaStr, cierre) {
   return { mes: bm, año: by };
 }
 
-// Devuelve un mapa {key: {año, mes, monto, items[]}} de todos los vencimientos de tarjeta
+// Devuelve todos los vencimientos de tarjeta, usando el cierre configurado para cada mes
 function getTarjetaSchedule() {
   const map = {};
   txns.forEach(t => {
     if (t.tipo !== 'Egreso' || t.pago !== 'Tarjeta' || t.yo !== 'Si') return;
-    const bm = calcBillingMonth(t.fecha, cierreTarjeta);
+    const cierre = getCierre(t.año, t.mes); // cierre específico del mes del gasto
+    const bm = calcBillingMonth(t.fecha, cierre);
     if (!bm) return;
     const key = bm.año * 100 + bm.mes;
     if (!map[key]) map[key] = { año: bm.año, mes: bm.mes, monto: 0, items: [] };
@@ -1353,9 +1358,9 @@ function renderFijos() {
   checkFijosLoaded();
   renderTarjetaPreview();
 
-  // Restaurar valor cierre
+  // Mostrar el cierre guardado para este mes
   const inp = document.getElementById('cierre-day');
-  if (inp) inp.value = cierreTarjeta;
+  if (inp) inp.value = getCierre(curYear, curMes);
 }
 
 function actualizarTotalFijos() {
@@ -1371,9 +1376,11 @@ function updateFijo(i, val) {
 
 function saveCierre(val) {
   const n = parseInt(val);
-  if (!n || n < 1 || n > 31) return; // no guardar si el valor es inválido/vacío
-  cierreTarjeta = n;
-  try { localStorage.setItem('gast_cierre', String(n)); } catch(e) {}
+  if (!n || n < 1 || n > 31) return;
+  try {
+    localStorage.setItem('gast_cierre_' + curYear + '_' + curMes, String(n)); // guarda para este mes
+    localStorage.setItem('gast_cierre', String(n)); // guarda como default para meses sin configurar
+  } catch(e) {}
   renderTarjetaPreview();
 }
 
@@ -1381,30 +1388,27 @@ function renderTarjetaPreview() {
   const el = document.getElementById('tarjeta-preview');
   if (!el) return;
 
+  const cierre = getCierre(curYear, curMes); // cierre específico del mes visualizado
   const schedule = getTarjetaSchedule();
 
   // Monto que vence en el mes actualmente visualizado
   const curEntry = schedule.find(s => s.año === curYear && s.mes === curMes);
-  const curAmount = curEntry ? curEntry.monto : 0;
 
-  // Gráfico de próximos 12 meses desde hoy
-  // Usamos curYear/curMes como punto de partida del gráfico (el mes visualizado)
-  const curKey = curYear * 100 + curMes;
-
+  // Próximos 12 meses desde el mes visualizado
   const months = [];
   for (let i = 0; i < 12; i++) {
     let m = curMes + i, y = curYear;
     if (m > 12) { m -= 12; y++; }
     const entry = schedule.find(s => s.año === y && s.mes === m);
-    months.push({ año: y, mes: m, monto: entry ? entry.monto : 0 });
+    const c = getCierre(y, m);
+    months.push({ año: y, mes: m, monto: entry ? entry.monto : 0, cierre: c });
   }
   const maxM = Math.max(...months.map(m => m.monto), 1);
 
   const bars = months.map((m, idx) => {
     const h   = m.monto > 0 ? Math.max(4, Math.round(m.monto / maxM * 68)) : 0;
-    const key = m.año * 100 + m.mes;
     const cls = idx === 0 ? 'cur' : '';
-    const tip = `${MES_NOM[m.mes-1]} ${m.año}: ${m.monto > 0 ? fmt(m.monto) : 'sin cargos'}`;
+    const tip = `${MES_NOM[m.mes-1]} ${m.año}: ${m.monto > 0 ? fmt(m.monto) : 'sin cargos'} · cierra día ${m.cierre}`;
     return `<div class="tarchart-col">
       <div class="tarchart-bar ${cls}" style="height:${h}px" data-tip="${tip}"></div>
       <div class="tarchart-lbl" style="${idx===0?'color:var(--acc)':''}">${MES_COD[m.mes-1]}</div>
@@ -1422,20 +1426,22 @@ function renderTarjetaPreview() {
     </div>`
   ).join('');
 
-  // Próximo mes con vencimiento
+  // Mostrar próximo vencimiento si este mes es $0
   const nextWithData = months.find(m => m.monto > 0);
   const showEntry = curEntry || nextWithData;
 
   el.innerHTML = `
     <div class="tarjeta-card">
-      <div class="tarjeta-ttl">Tarjeta — vence en ${MES_NOM[(showEntry?showEntry.mes:curMes)-1]} ${showEntry?showEntry.año:curYear}</div>
+      <div class="tarjeta-ttl">${showEntry
+        ? `A pagar en ${MES_NOM[showEntry.mes-1]} ${showEntry.año}`
+        : 'Sin cargos próximos'}</div>
       <div class="tarjeta-monto">${fmt(showEntry ? showEntry.monto : 0)}</div>
-      <div class="tarjeta-periodo">Gastos tarjeta cerrados antes del día ${cierreTarjeta} · próximo vencimiento</div>
+      <div class="tarjeta-periodo">Cierre de ${MES_NOM[curMes-1]}: día ${cierre}</div>
     </div>
     <div class="tarchart-wrap">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:600;margin-bottom:6px">Proyección tarjeta — 12 meses</div>
-      <div class="chart-area">
-        <div class="chart-yaxis">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:600;margin-bottom:6px">Proyección — 12 meses</div>
+      <div style="display:flex;gap:6px">
+        <div style="width:42px;flex-shrink:0;display:flex;flex-direction:column;justify-content:space-between;height:80px">
           <div class="chart-yaxis-lbl">${fmtShort(maxM)}</div>
           <div class="chart-yaxis-lbl">${fmtShort(Math.round(maxM/2))}</div>
           <div class="chart-yaxis-lbl">$0</div>
