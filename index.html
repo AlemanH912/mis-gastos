@@ -873,7 +873,8 @@ try {
   }
 } catch(e) {}
 
-let curYear = 2026, curMes = 5;
+const _hoy = new Date();
+let curYear = _hoy.getFullYear(), curMes = _hoy.getMonth() + 1;
 let tipoForm = 'egreso';
 let togYo = true, togCuotas = false;
 
@@ -1377,7 +1378,9 @@ function renderFijos() {
     </div>`).join('');
   actualizarTotalFijos();
   checkFijosLoaded();
-  renderCierreGrid();
+  // No re-renderizar el grid de cierres si el usuario está escribiendo en una celda
+  const focusedCierre = document.activeElement && document.activeElement.classList.contains('cierre-cell-inp');
+  if (!focusedCierre) renderCierreGrid();
   renderTarjetaPreview();
 }
 
@@ -1403,6 +1406,8 @@ function saveCierre(val) {
 }
 
 // Guarda el cierre para un mes específico (desde la grilla)
+// NO re-renderiza el gráfico en cada tecla — solo guarda en localStorage
+// El re-render del gráfico se hace en onblur del input
 function setCierreMonth(y, m, val) {
   const n = parseInt(val);
   if (!n || n < 1 || n > 31) return;
@@ -1410,7 +1415,6 @@ function setCierreMonth(y, m, val) {
     localStorage.setItem('gast_cierre_' + y + '_' + m, String(n));
     localStorage.setItem('gast_cierre', String(n)); // actualiza default
   } catch(e) {}
-  renderTarjetaPreview(); // recalcula el gráfico
 }
 
 // Renderiza la grilla de cierres: 6 meses atrás + mes actual + 5 meses adelante
@@ -1432,7 +1436,7 @@ function renderCierreGrid() {
         <div class="cierre-cell-mes">${MES_COD[m-1]} ${String(y).slice(2)}</div>
         <input class="cierre-cell-inp" type="number" min="1" max="31" value="${c}"
           oninput="setCierreMonth(${y},${m},this.value)"
-          onblur="setCierreMonth(${y},${m},this.value)">
+          onblur="setCierreMonth(${y},${m},this.value);renderTarjetaPreview()">
         <div class="cierre-cell-sub">paga en ${MES_COD[pm-1]}</div>
       </div>`);
   }
