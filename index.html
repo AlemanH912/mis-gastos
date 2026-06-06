@@ -847,12 +847,11 @@ const FIJOS_DEFAULT = [
   {nombre:'WiFi',monto:83000,pago:'Tarjeta',yo:'No'},
 ];
 let fijosData = (() => { try { const s=localStorage.getItem('gast_fijos'); return s?JSON.parse(s):FIJOS_DEFAULT.map(f=>({...f})); } catch(e){ return FIJOS_DEFAULT.map(f=>({...f})); } })();
-// Cierre de tarjeta — se guarda POR MES (gast_cierre_YYYY_M) con fallback a último usado
+// Cierre de tarjeta — se guarda POR MES (gast_cierre_YYYY_M) independientemente
 function getCierre(y, m) {
   const v = parseInt(localStorage.getItem('gast_cierre_' + y + '_' + m));
   if (v >= 1 && v <= 31) return v;
-  const def = parseInt(localStorage.getItem('gast_cierre'));
-  return (def >= 1 && def <= 31) ? def : 15;
+  return 15; // default si nunca se configuró este mes
 }
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -1396,24 +1395,18 @@ function updateFijo(i, val) {
 }
 
 function saveCierre(val) {
-  const n = parseInt(val);
-  if (!n || n < 1 || n > 31) return;
-  try {
-    localStorage.setItem('gast_cierre_' + curYear + '_' + curMes, String(n));
-    localStorage.setItem('gast_cierre', String(n));
-  } catch(e) {}
+  setCierreMonth(curYear, curMes, val);
   renderTarjetaPreview();
 }
 
 // Guarda el cierre para un mes específico (desde la grilla)
-// NO re-renderiza el gráfico en cada tecla — solo guarda en localStorage
-// El re-render del gráfico se hace en onblur del input
+// Cada mes tiene su propia clave independiente — NO se toca el default global
+// El re-render del gráfico se hace en onblur del input (no en cada tecla)
 function setCierreMonth(y, m, val) {
   const n = parseInt(val);
   if (!n || n < 1 || n > 31) return;
   try {
     localStorage.setItem('gast_cierre_' + y + '_' + m, String(n));
-    localStorage.setItem('gast_cierre', String(n)); // actualiza default
   } catch(e) {}
 }
 
