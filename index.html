@@ -113,6 +113,8 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .p-Entretenimiento{background:#dcfce7;color:#15803d}
 .p-Ropa{background:#fce7f3;color:#9d174d}
 .p-Nafta{background:#e0f2fe;color:#0369a1}
+.p-Transporte{background:#cffafe;color:#0e7490}
+.p-Salud{background:#f0fdf4;color:#166534}
 .p-Deuda{background:#fee2e2;color:#991b1b}
 .p-Otros{background:#f3f4f6;color:#374151}
 .p-Sueldo{background:#d1fae5;color:#065f46}
@@ -123,7 +125,10 @@ body{background:var(--bg);color:var(--t1);font-family:var(--font);font-size:14px
 .monto-ing{color:var(--green);font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
 .monto-egr{color:var(--red);font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
 .pago-txt{font-size:11px;color:var(--t3);font-family:var(--mono)}
-.yo-no{color:var(--amber);font-size:11px;font-weight:600}
+/* Quién paga: badge "viejos" en egresos compartidos */
+.yo-no{display:inline-flex;align-items:center;gap:3px;background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;font-family:var(--mono);letter-spacing:.2px}
+.row-viejos td{background:#fffbf5 !important}
+.row-viejos:hover td{background:#fff3e0 !important}
 
 /* FILTERS */
 .filter-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
@@ -430,14 +435,15 @@ button,a,.mes-arr,.nav-btn,.bnav-btn,.seg-btn,.flt,.add-btn,.sync-btn{touch-acti
           <option value="">Categoría</option>
           <option>Fijo</option><option>Casa</option><option>Salidas</option>
           <option>Almuerzo</option><option>Entretenimiento</option><option>Ropa</option>
-          <option>Nafta</option><option>Deuda</option><option>Otros</option>
+          <option>Nafta</option><option>Transporte</option><option>Salud</option>
+          <option>Deuda</option><option>Otros</option>
           <option>Sueldo</option><option>Caja</option>
         </select>
         <select class="flt" id="flt-pago" onchange="renderHistorial()">
           <option value="">Pago</option><option>Tarjeta</option><option>Efectivo</option>
         </select>
         <select class="flt" id="flt-yo" onchange="renderHistorial()">
-          <option value="">Todos</option><option value="Si">Solo míos</option><option value="No">Compartidos</option>
+          <option value="">Todos</option><option value="Si">Míos</option><option value="No">Viejos</option>
         </select>
         <span class="count-badge" id="hist-count">0 filas</span>
         <button class="sync-btn" onclick="exportCSV()">↓ CSV</button>
@@ -510,7 +516,8 @@ button,a,.mes-arr,.nav-btn,.bnav-btn,.seg-btn,.flt,.add-btn,.sync-btn{touch-acti
         <select class="finp" id="f-cat">
           <option>Fijo</option><option>Casa</option><option selected>Salidas</option>
           <option>Almuerzo</option><option>Entretenimiento</option><option>Ropa</option>
-          <option>Nafta</option><option>Deuda</option><option>Otros</option>
+          <option>Nafta</option><option>Transporte</option><option>Salud</option>
+          <option>Deuda</option><option>Otros</option>
         </select>
       </div>
       <div class="fg" id="fg-cat-ing" style="display:none">
@@ -536,7 +543,7 @@ button,a,.mes-arr,.nav-btn,.bnav-btn,.seg-btn,.flt,.add-btn,.sync-btn{touch-acti
       <div class="fg full" id="fg-yo">
         <div class="ftoggle-row">
           <div class="ftoggle on" id="tog-yo" onclick="toggleYo()"></div>
-          <span style="font-size:13px;color:var(--t2)">Lo pagás vos</span>
+          <span style="font-size:13px;color:var(--t2)" id="lbl-yo">Lo pagás vos</span>
         </div>
       </div>
       <div class="fg full" id="fg-cuotas">
@@ -623,8 +630,10 @@ const MES_COD   = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','
 
 const CAT_COL = {
   Fijo:'#2563eb',Casa:'#7c3aed',Salidas:'#d97706',Almuerzo:'#ea580c',
-  Entretenimiento:'#16a34a',Ropa:'#db2777',Nafta:'#0369a1',Deuda:'#dc2626',
-  Otros:'#6b7280',Sueldo:'#059669',Caja:'#059669',Extra:'#059669'
+  Entretenimiento:'#16a34a',Ropa:'#db2777',Nafta:'#0369a1',
+  Transporte:'#0e7490',Salud:'#166534',
+  Deuda:'#dc2626',Otros:'#6b7280',
+  Sueldo:'#059669',Caja:'#059669',Extra:'#059669'
 };
 
 // ── DATA (seed inicial — se reemplaza con datos del Sheet al sincronizar) ──────
@@ -1220,7 +1229,7 @@ function renderDash() {
   ).join('');
   document.getElementById('spark-legend').innerHTML =
     `<div class="spark-legend-item"><div class="spark-legend-dot" style="background:#1e40af"></div>Míos</div>
-     <div class="spark-legend-item"><div class="spark-legend-dot" style="background:#93c5fd"></div>Compartidos</div>`;
+     <div class="spark-legend-item"><div class="spark-legend-dot" style="background:#93c5fd"></div>Viejos</div>`;
 
   // Recientes
   const rec = [...egrs,...ings].sort((a,b) => {
@@ -1230,10 +1239,10 @@ function renderDash() {
     ? `<table class="txn-tbl"><thead><tr>
         <th>Fecha</th><th>Cat.</th><th>Motivo</th><th class="col-tipo">Pago</th><th style="text-align:right">Monto</th>
       </tr></thead><tbody>` +
-      rec.map(t => `<tr>
+      rec.map(t => `<tr class="${t.yo==='No' && t.tipo==='Egreso' ? 'row-viejos' : ''}">
         <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${fmtFecha(t.fecha).slice(0,5)}</td>
         <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.motivo||'—'} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.motivo||'—'} ${t.yo==='No' && t.tipo==='Egreso' ? '<span class="yo-no">viejos</span>' : ''}</td>
         <td class="col-tipo"><span class="pago-txt">${t.pago||''}</span></td>
         <td class="${t.tipo==='Ingreso'?'monto-ing':'monto-egr'}">${t.tipo==='Ingreso'?'+':''}${fmt(t.monto)}</td>
       </tr>`).join('') + `</tbody></table>`
@@ -1264,11 +1273,11 @@ function renderHistorial() {
     ? `<table class="txn-tbl"><thead><tr>
         <th>Fecha</th><th class="col-tipo">Tipo</th><th>Cat.</th><th>Motivo</th><th>Pago</th><th class="col-obs">Obs.</th><th style="text-align:right">Monto</th>
       </tr></thead><tbody>` +
-      rows.map(t => `<tr>
+      rows.map(t => `<tr class="${t.yo==='No' && t.tipo==='Egreso' ? 'row-viejos' : ''}">
         <td style="font-family:var(--mono);font-size:11px;color:var(--t3)">${fmtFecha(t.fecha)}</td>
         <td class="col-tipo"><span class="${t.tipo==='Ingreso'?'tipo-ing':'tipo-egr'}">${t.tipo}</span></td>
         <td><span class="cat-pill p-${t.cat}">${t.cat}</span></td>
-        <td>${t.motivo||'—'} ${t.yo==='No'?'<span class="yo-no">comp.</span>':''}</td>
+        <td>${t.motivo||'—'} ${t.yo==='No' && t.tipo==='Egreso' ? '<span class="yo-no">viejos</span>' : ''}</td>
         <td><span class="pago-txt">${t.pago||''}</span></td>
         <td class="col-obs" style="font-size:11px;color:var(--t3)">${t.obs||''}</td>
         <td class="${t.tipo==='Ingreso'?'monto-ing':'monto-egr'}">${t.tipo==='Ingreso'?'+':''}${fmt(t.monto)}</td>
@@ -1325,7 +1334,7 @@ function renderResumen() {
 // ── CATEGORÍAS ────────────────────────────────────────────────────────────────
 function renderCategorias() {
   // Deuda se muestra en su propia fila (para auditar) pero NO entra en el TOTAL
-  const cats = ['Fijo','Casa','Salidas','Almuerzo','Entretenimiento','Ropa','Nafta','Deuda','Otros'];
+  const cats = ['Fijo','Casa','Salidas','Almuerzo','Entretenimiento','Ropa','Nafta','Transporte','Salud','Deuda','Otros'];
   const seen = new Set();
   txns.forEach(t => {
     const k = t.año*100 + t.mes;
@@ -1579,6 +1588,7 @@ function setTipo(t, btn) {
 function toggleYo() {
   togYo = !togYo;
   document.getElementById('tog-yo').className = 'ftoggle ' + (togYo ? 'on' : '');
+  document.getElementById('lbl-yo').textContent = togYo ? 'Lo pagás vos' : 'Lo pagan tus viejos';
 }
 
 function toggleCuotas() {
